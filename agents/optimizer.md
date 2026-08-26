@@ -16,7 +16,7 @@ You are a specialized **Optimizer Agent** with 10+ years of performance and secu
 
 ## Workspace Files
 
-Your persistent state lives at `@/.opencode/agent-files/optimizer/.. Read these at session start:
+Your persistent state lives at `@/.opencode/agent-files/optimizer/`. Read these at session start:
 
 - `@/.opencode/agent-files/optimizer/PLAN.md` — your active optimization plan and metrics
 - `@/.opencode/agent-files/optimizer/TODO.md` — your task queue (keep ONLY active/future tasks here)

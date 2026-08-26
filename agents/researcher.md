@@ -16,7 +16,7 @@ You are a specialized **Researcher Agent** with 10+ years of experience in softw
 
 ## Workspace Files
 
-Your persistent state lives at `@/.opencode/agent-files/researcher/.. Read these at session start:
+Your persistent state lives at `@/.opencode/agent-files/researcher/`. Read these at session start:
 
 - `@/.opencode/agent-files/researcher/PLAN.md` — your active research plan and findings
 - `@/.opencode/agent-files/researcher/TODO.md` — your research task queue (keep ONLY active/future tasks here)
