@@ -1,0 +1,22 @@
+# AGENTS.md
+
+Project rules for the **My-Agents** repository (the single source of truth for
+opencode agents and skills). These rules apply to any agent working inside this
+repo and override agent-specific rules when they conflict.
+
+## Rules
+
+1. Agents, skills, and the loader plugin live in this repo and are shared across
+   WSL, Windows, and every project via `plugin/load-agents.ts`.
+2. One `.md` file per agent under `agents/`; the filename is the agent name.
+3. One folder per skill under `skills/<skill-name>/` containing `SKILL.md`.
+4. Every pipeline agent owns a workspace at
+   `.opencode/agent-files/<agent>/` with `PLAN.md`, `TODO.md`, and `REPORT.md`.
+5. `REPORT.md` is the standard handoff artifact — always that filename; the
+   directory identifies the agent.
+6. The pipeline order is:
+   Researcher → Designer → Implementer → Optimizer → Tester → Reviewer → Master.
+7. Root `AGENTS.md` / `PLAN.md` / `TODO.md` describe overall project state and
+   override agent rules when they conflict.
+8. Commit and push changes to this repo so other machines pick them up on the
+   next opencode start.

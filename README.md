@@ -45,3 +45,27 @@ Restart opencode after changing config.
   system prompt. The filename is the agent name.
 - **Add a skill:** create `skills/<skill-name>/SKILL.md` with `name` and
   `description` frontmatter, then commit/push.
+
+## Agent Pipeline
+
+Agents run as a handoff pipeline. Each agent owns a workspace under
+`.opencode/agent-files/<agent>/` containing three files: `PLAN.md`,
+`TODO.md`, and `REPORT.md`. The `REPORT.md` is the standard handoff
+artifact consumed by the next stage.
+
+    Researcher → Designer → Implementer → Optimizer → Tester → Reviewer → Master
+
+| Agent | Workspace |
+|---|---|
+| researcher | `.opencode/agent-files/researcher/` |
+| designer | `.opencode/agent-files/designer/` |
+| implementer | `.opencode/agent-files/implementer/` |
+| optimizer | `.opencode/agent-files/optimizer/` |
+| tester | `.opencode/agent-files/tester/` |
+| reviewer | `.opencode/agent-files/reviewer/` |
+| master | `.opencode/agent-files/master/` |
+
+The Master Agent orchestrates the pipeline and reconstructs state from the
+root `AGENTS.md` / `PLAN.md` / `TODO.md`, the agent workspaces, and git
+state. `REPORT.md` always uses the same filename per agent; the directory
+identifies the agent.

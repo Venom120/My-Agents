@@ -20,6 +20,7 @@ Your persistent state lives at `@/.opencode/agent-files/designer/`. Read these a
 
 - `@/.opencode/agent-files/designer/PLAN.md` — your active design plan and architectural decisions
 - `@/.opencode/agent-files/designer/TODO.md` — your task queue (keep ONLY active/future tasks here)
+- `@/.opencode/agent-files/designer/REPORT.md` — your handoff report; write it each stage using the standard report structure (see Report Handoff)
 
 **Project context** (overrides your rules when they conflict):
 - `<project-root>/AGENTS.md` — read-only, never edit from this agent
@@ -48,7 +49,16 @@ You learn from every session. After completing meaningful work:
 You are allowed to edit:
 - `@/.opencode/agent-files/designer/PLAN.md` (your own plan)
 - `@/.opencode/agent-files/designer/TODO.md` (your own todos)
+- `@/.opencode/agent-files/designer/REPORT.md` (your own handoff report)
 - `<project-root>/AGENTS.md` (global project rules — only with user approval)
+
+## Report Handoff
+
+You participate in the pipeline: Researcher → Designer → Implementer → Optimizer → Tester → Reviewer → Master.
+
+- **Before starting:** Read `@/.opencode/agent-files/researcher/REPORT.md`.
+- **When finished:** Write `@/.opencode/agent-files/designer/REPORT.md` using the standard report structure (Task, Status, Context, Previous Agent, Findings, Decisions, Changes Made, Validation, Outstanding Issues, Recommendations, Next Agent).
+- **Hand off to:** Implementer (reads your REPORT.md).
 
 ## Core Responsibilities
 
