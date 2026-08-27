@@ -14,11 +14,13 @@ My-Agents/
 ## Wiring it up (once per machine)
 
 Add to the **global** config (`~/.config/opencode/opencode.json` on both
-WSL and Windows — paths differ only by mount prefix):
+WSL and Windows — paths differ only by mount prefix).
+
+### Option A — local checkout (recommended while editing agents/skills)
 
 ```jsonc
 {
-  // ...
+  "$schema": "https://opencode.ai/config.json",
   "plugin": [
     "<repo>/plugin/load-agents.ts"
   ],
@@ -32,6 +34,26 @@ WSL and Windows — paths differ only by mount prefix):
 |---|---|
 | Windows | `D:/github/My-Agents` |
 | WSL | `/mnt/d/github/My-Agents` |
+
+### Option B — load directly from GitHub (no local clone needed)
+
+The loader plugin also registers the repo's `skills/` folder, so a single
+plugin entry is enough. Copy **`opencode.example.jsonc`** from this repo into
+your global config directory, then adjust the owner/branch if you forked or
+renamed the repo:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "github:Venom120/My-Agents#main::path:plugin"
+  ]
+}
+```
+
+With this setup you can delete the local clone and opencode will fetch the
+plugin (and skills) from GitHub on startup. To pin a commit/branch, replace
+`#main` with e.g. `#v1.0.0` or a full commit SHA.
 
 Restart opencode after changing config.
 

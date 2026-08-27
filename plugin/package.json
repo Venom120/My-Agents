@@ -1,0 +1,7 @@
+{
+  "name": "my-agents-opencode-plugin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "load-agents.ts"
+}

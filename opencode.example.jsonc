@@ -1,0 +1,8 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Loads agents AND skills directly from the GitHub repo — no local clone needed.
+  // Adjust the owner/branch if you forked or renamed the repo.
+  "plugin": [
+    "github:Venom120/My-Agents#main::path:plugin"
+  ]
+}

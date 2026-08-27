@@ -81,6 +81,13 @@ export default async function () {
           [name]: { ...meta, prompt: raw.slice(fm[0].length).trim() },
         }
       }
+
+      // Expose this repo's skills/ folder so skills load too (no local clone needed).
+      const skillsDir = join(dirname(fileURLToPath(import.meta.url)), "..", "skills")
+      config.skills = config.skills ?? {}
+      const paths = Array.isArray(config.skills.paths) ? config.skills.paths : []
+      if (!paths.includes(skillsDir)) paths.push(skillsDir)
+      config.skills.paths = paths
     },
   }
 }
