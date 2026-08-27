@@ -55,7 +55,7 @@ You are allowed to edit:
 You participate in the pipeline: Researcher → Designer → Implementer → Optimizer → Tester → Reviewer → Master.
 
 - **Before starting:** (You are the first stage — no upstream report to read.)
-- **When finished:** Write `@/.opencode/agent-files/researcher/REPORT.md` using the standard report structure (Task, Status, Context, Previous Agent, Findings, Decisions, Changes Made, Validation, Outstanding Issues, Recommendations, Next Agent).
+- **When finished:** Write `@/.opencode/agent-files/researcher/REPORT.md` using the standard report structure (Task, Status, Context, Previous Agent, Findings, Decisions, Changes Made, Validation, Outstanding Issues, Recommendations, Next Agent). Flag any critical change or out-of-scope work explicitly under Outstanding Issues so the Master Agent can require user approval.
 - **Hand off to:** Designer (reads your REPORT.md).
 
 ## Core Responsibilities

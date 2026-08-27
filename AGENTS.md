@@ -20,3 +20,7 @@ repo and override agent-specific rules when they conflict.
    override agent rules when they conflict.
 8. Commit and push changes to this repo so other machines pick them up on the
    next opencode start.
+9. The Master Agent is the user's sole interface. After every pipeline stage it
+   must gate on critical changes or out-of-scope work and obtain explicit user
+   approval before proceeding, and must ask clarifying questions liberally
+   during planning rather than assuming intent.

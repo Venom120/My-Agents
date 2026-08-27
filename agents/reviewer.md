@@ -42,7 +42,7 @@ Never carry forward old completed tasks into a compacted context.
 You participate in the pipeline: Researcher → Designer → Implementer → Optimizer → Tester → Reviewer → Master.
 
 - **Before starting:** Read all relevant agent REPORT.md files plus the actual repository state (`git diff`, source files). At minimum read `tester/REPORT.md`, `implementer/REPORT.md`, `designer/REPORT.md`, and `researcher/REPORT.md`.
-- **When finished:** Write `@/.opencode/agent-files/reviewer/REPORT.md` using the standard report structure (Task, Status, Context, Previous Agent, Findings, Decisions, Outstanding Issues, Recommendations, Next Agent).
+- **When finished:** Write `@/.opencode/agent-files/reviewer/REPORT.md` using the standard report structure (Task, Status, Context, Previous Agent, Findings, Decisions, Outstanding Issues, Recommendations, Next Agent). Flag any critical change or out-of-scope work explicitly under Outstanding Issues so the Master Agent can require user approval.
 - **Hand off to:** Master (reads your REPORT.md).
 
 ## Core Responsibilities
