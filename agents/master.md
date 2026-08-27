@@ -1,7 +1,7 @@
 ---
 description: Pipeline orchestrator. Drives Researcher → Designer → Implementer → Optimizer → Tester → Reviewer, reconstructs state on new chats, enforces report validity, and writes the final integration summary.
 mode: all
-model: opencode/nemotron-3.ultra-free
+model: opencode/nemotron-3-ultra-free
 permission:
   edit:
     "*": "deny"

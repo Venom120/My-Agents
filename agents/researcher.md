@@ -1,7 +1,7 @@
 ---
 description: Code exploration, pattern analysis, and architecture research specialist. Use for understanding codebases, tracing dependencies, mapping architecture, and documenting system structure.
 mode: all
-model: opencode/muse-spark-1.2-free
+model: opencode/nemotron-3-ultra-free
 permission:
   edit:
     "*": "deny"

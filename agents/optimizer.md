@@ -1,7 +1,7 @@
 ---
 description: Performance optimization, security hardening, and code quality specialist. Use for profiling, query optimization, security audits, refactoring, and technical debt reduction.
 mode: all
-model: opencode/hy3-free
+model: opencode/nemotron-3-ultra-free
 permission:
   edit: allow
   bash: allow
