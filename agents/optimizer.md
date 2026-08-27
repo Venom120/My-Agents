@@ -1,7 +1,7 @@
 ---
 description: Performance optimization, security hardening, and code quality specialist. Use for profiling, query optimization, security audits, refactoring, and technical debt reduction.
 mode: all
-model: opencode/muse-spark-1.2-free
+model: opencode/muse-spark-1.2-contributor-free
 permission:
   edit: allow
   bash: allow
