@@ -47,7 +47,7 @@ renamed the repo:
 {
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
-    "github:Venom120/My-Agents#main"
+    "my-agents@git+https://github.com/Venom120/My-Agents.git#main"
   ]
 }
 ```

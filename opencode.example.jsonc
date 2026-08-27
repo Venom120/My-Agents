@@ -4,6 +4,6 @@
   // The plugin registers both from the repo's agents/ and skills/ folders.
   // Adjust the owner/branch if you forked or renamed the repo.
   "plugin": [
-    "github:Venom120/My-Agents#main"
+    "my-agents@git+https://github.com/Venom120/My-Agents.git#main"
   ]
 }
