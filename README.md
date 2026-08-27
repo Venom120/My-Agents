@@ -37,23 +37,27 @@ WSL and Windows — paths differ only by mount prefix).
 
 ### Option B — load directly from GitHub (no local clone needed)
 
-The loader plugin also registers the repo's `skills/` folder, so a single
-plugin entry is enough. Copy **`opencode.example.jsonc`** from this repo into
-your global config directory, then adjust the owner/branch if you forked or
+The loader plugin (a proper opencode plugin package — see the repo's
+`package.json` `main`) registers both `agents/` and `skills/` from the repo, so
+a single plugin entry is enough. Copy **`opencode.example.jsonc`** from this repo
+into your global config directory, then adjust the owner/branch if you forked or
 renamed the repo:
 
 ```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
-    "github:Venom120/My-Agents#main::path:plugin"
+    "github:Venom120/My-Agents#main"
   ]
 }
 ```
 
 With this setup you can delete the local clone and opencode will fetch the
-plugin (and skills) from GitHub on startup. To pin a commit/branch, replace
-`#main` with e.g. `#v1.0.0` or a full commit SHA.
+whole repo as a plugin and register agents + skills on startup. To pin a
+commit/branch, replace `#main` with e.g. `#v1.0.0` or a full commit SHA.
+
+> Note: load the **whole repo**, not a subpath (e.g. `#main::path:plugin`); a
+> subpath spec produces an empty checkout and nothing registers.
 
 Restart opencode after changing config.
 
