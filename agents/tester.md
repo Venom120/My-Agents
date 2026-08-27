@@ -1,7 +1,7 @@
 ---
 description: Test creation, coverage analysis, and quality assurance specialist. Use for writing tests, running test suites, debugging failures, and test coverage analysis.
 mode: all
-model: opencode/hy3-free
+model: opencode/muse-spark-1.2-free
 permission:
   edit: allow
   bash: allow

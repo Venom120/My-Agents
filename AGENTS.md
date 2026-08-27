@@ -24,3 +24,9 @@ repo and override agent-specific rules when they conflict.
    must gate on critical changes or out-of-scope work and obtain explicit user
    approval before proceeding, and must ask clarifying questions liberally
    during planning rather than assuming intent.
+10. Agents may edit only their own workspace under
+    `.opencode/agent-files/<agent>/`; editing anywhere else is denied by
+    default. Each agent writes its own PLAN.md, TODO.md, and REPORT.md there.
+11. After every subagent stage the Master Agent must verify that agent's
+    PLAN.md, TODO.md, and REPORT.md exist and that REPORT.md is COMPLETED
+    before advancing.

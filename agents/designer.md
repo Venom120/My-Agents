@@ -3,7 +3,9 @@ description: System design, API design, and architecture planning specialist. Us
 mode: all
 model: opencode/hy3-free
 permission:
-  edit: deny
+  edit:
+    "*": "deny"
+    "**/.opencode/agent-files/**": "allow"
   bash: deny
   websearch: allow
   webfetch: allow

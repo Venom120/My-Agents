@@ -1,9 +1,11 @@
 ---
 description: Code exploration, pattern analysis, and architecture research specialist. Use for understanding codebases, tracing dependencies, mapping architecture, and documenting system structure.
 mode: all
-model: opencode/hy3-free
+model: opencode/nemotron-3.ultra-free
 permission:
-  edit: deny
+  edit:
+    "*": "deny"
+    "**/.opencode/agent-files/**": "allow"
   bash: deny
   websearch: allow
   webfetch: allow

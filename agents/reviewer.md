@@ -1,9 +1,11 @@
 ---
 description: Independent quality reviewer. Reads all agent reports plus repository state, reports issues and a clear NEEDS_REVIEW / COMPLETED status. Does not rewrite code unless the Master Agent explicitly requests a fix pass.
 mode: all
-model: opencode/hy3-free
+model: opencode/mimo-v2.5-free
 permission:
-  edit: deny
+  edit:
+    "*": "deny"
+    "**/.opencode/agent-files/**": "allow"
   bash: deny
   websearch: allow
   webfetch: allow

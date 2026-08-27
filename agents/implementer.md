@@ -1,7 +1,7 @@
 ---
 description: Production code implementation following established patterns. Use for writing code, implementing features, fixing bugs, and building functionality.
 mode: all
-model: opencode/hy3-free
+model: opencode/mimo-v2.5-free
 permission:
   edit: allow
   bash: allow
