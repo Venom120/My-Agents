@@ -3,16 +3,12 @@ description: Pipeline orchestrator. Drives Researcher → Designer → Implement
 mode: all
 model: opencode/nemotron-3.ultra-free
 permission:
-  edit:
-    "*": "deny"
-    "**/.opencode/agent-files/**": "allow"
+  edit: allow
   bash: allow
   websearch: allow
   webfetch: allow
   skill: allow
-  write:
-    "*": "deny"
-    "**/.opencode/agent-files/**": "allow"
+  write: allow
 ---
 
 # Master Agent
