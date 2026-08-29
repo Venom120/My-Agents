@@ -81,15 +81,15 @@ artifact consumed by the next stage.
 
     Researcher → Designer → Implementer → Optimizer → Tester → Reviewer → Master
 
-| Agent | Workspace |
-|---|---|
-| researcher | `.opencode/agent-files/researcher/` |
-| designer | `.opencode/agent-files/designer/` |
-| implementer | `.opencode/agent-files/implementer/` |
-| optimizer | `.opencode/agent-files/optimizer/` |
-| tester | `.opencode/agent-files/tester/` |
-| reviewer | `.opencode/agent-files/reviewer/` |
-| master | `.opencode/agent-files/master/` |
+| Agent | Model | Role |
+|---|---|---|
+| researcher | `muse-spark-1.2-contributor` | Deep exploration, architecture research |
+| designer | `hy3` | Architecture/design reasoning |
+| implementer | `mimo-v2.5` | Multi-file implementation |
+| optimizer | `muse-spark-1.2-contributor` | Performance/security optimization |
+| tester | `muse-spark-1.2-contributor` | Test creation, coverage analysis |
+| reviewer | `mimo-v2.5` | Independent quality review |
+| master | `nemotron-3-ultra` | Pipeline orchestration, final integration |
 
 The Master Agent orchestrates the pipeline and reconstructs state from the
 root `AGENTS.md` / `PLAN.md` / `TODO.md`, the agent workspaces, and git

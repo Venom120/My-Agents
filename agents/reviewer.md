@@ -10,6 +10,9 @@ permission:
   websearch: allow
   webfetch: allow
   skill: allow
+  write:
+    "*": "deny"
+    "**/.opencode/agent-files/**": "allow"
 ---
 
 # Reviewer Agent

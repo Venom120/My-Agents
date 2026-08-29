@@ -8,6 +8,7 @@ permission:
   websearch: allow
   webfetch: allow
   skill: allow
+  write: allow
 ---
 
 # Implementer Agent
