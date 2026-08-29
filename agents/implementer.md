@@ -81,3 +81,4 @@ You participate in the pipeline: Researcher → Designer → Implementer → Opt
 7. Handle errors properly
 8. Run pycompile/npm build after every file edit
 9. Ask before making schema changes, model alterations, or architecture decisions
+10. - **Prefer tools over shell.** When editing or writing files, always use the `edit` or `write` tool instead of shell commands (`bash`). When reading a single file, always use the `read` tool. When searching, always use `grep` or `glob` tools. Fall back to shell commands only when the appropriate tool is not available.

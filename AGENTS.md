@@ -30,3 +30,8 @@ repo and override agent-specific rules when they conflict.
 11. After every subagent stage the Master Agent must verify that agent's
     PLAN.md, TODO.md, and REPORT.md exist and that REPORT.md is COMPLETED
     before advancing.
+12. **Prefer tools over shell.** When editing or writing files, always use the
+    `edit` or `write` tool instead of shell commands. When reading a single
+    file, always use the `read` tool. When searching, always use `grep` or
+    `glob` tools. Fall back to shell commands only when the appropriate tool
+    is not available.

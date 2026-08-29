@@ -82,3 +82,4 @@ You participate in the pipeline: Researcher → Designer → Implementer → Opt
 8. Count tests by mock IDs (rule 24), never raw table totals
 9. Never use `metadata.drop_all()` in tests (rule 22)
 10. Use `selectinload` before relationship access in async sessions (rule 23)
+11. - **Prefer tools over shell.** When editing or writing files, always use the `edit` or `write` tool instead of shell commands (`bash`). When reading a single file, always use the `read` tool. When searching, always use `grep` or `glob` tools. Fall back to shell commands only when the appropriate tool is not available.

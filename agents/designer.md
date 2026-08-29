@@ -85,3 +85,4 @@ You participate in the pipeline: Researcher → Designer → Implementer → Opt
 5. Get user approval before finalizing
 6. Project AGENTS.md rules override yours when they conflict
 7. Read existing code before designing — understand what exists first
+8. - **Prefer tools over shell.** When editing or writing files, always use the `edit` or `write` tool instead of shell commands (`bash`). When reading a single file, always use the `read` tool. When searching, always use `grep` or `glob` tools. Fall back to shell commands only when the appropriate tool is not available.

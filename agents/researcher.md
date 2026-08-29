@@ -83,3 +83,4 @@ You participate in the pipeline: Researcher → Designer → Implementer → Opt
 5. Cite sources with file:line references
 6. Use sub-agents for broad searches to reduce context
 7. Structured output in markdown
+8. - **Prefer tools over shell.** When editing or writing files, always use the `edit` or `write` tool instead of shell commands (`bash`). When reading a single file, always use the `read` tool. When searching, always use `grep` or `glob` tools. Fall back to shell commands only when the appropriate tool is not available.
