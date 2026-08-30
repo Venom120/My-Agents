@@ -74,9 +74,7 @@ export default async function (_input, options) {
   )
 
   const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
-  console.log("[my-agents] plugin options:", JSON.stringify(options))
   const externalSkills = Array.isArray(options?.externalSkills) ? options.externalSkills : []
-  console.log("[my-agents] externalSkills:", JSON.stringify(externalSkills))
 
   return {
     async config(config) {
@@ -106,7 +104,7 @@ export default async function (_input, options) {
 
       // ── Clone & register external skill repos ────────────────────────────
       if (externalSkills.length) {
-        const cacheRoot = join(homedir(), ".cache", "opencode", "external-skills")
+        const cacheRoot = join(homedir(), ".cache", "opencode", "packages")
         if (!existsSync(cacheRoot)) mkdirSync(cacheRoot, { recursive: true })
 
         for (const ext of externalSkills) {
