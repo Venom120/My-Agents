@@ -66,12 +66,15 @@ function parseYaml(lines) {
 
 // ── Plugin entry ─────────────────────────────────────────────────────────────
 
-export default async function () {
+export default async function (_input, options) {
   const agentsDir = join(
     dirname(fileURLToPath(import.meta.url)),
     "..",
     "agents",
   )
+
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
+  const externalSkills = Array.isArray(options?.externalSkills) ? options.externalSkills : []
 
   return {
     async config(config) {
@@ -94,22 +97,17 @@ export default async function () {
       }
 
       // ── Register this repo's skills ──────────────────────────────────────
-      const skillsDir = join(
-        dirname(fileURLToPath(import.meta.url)),
-        "..",
-        "skills",
-      )
+      const skillsDir = join(repoRoot, "skills")
       config.skills = config.skills ?? {}
       const paths = Array.isArray(config.skills.paths) ? config.skills.paths : []
       if (!paths.includes(skillsDir)) paths.push(skillsDir)
 
-      // ── Clone & register external skills from config ─────────────────────
-      const external = Array.isArray(config.externalSkills) ? config.externalSkills : []
-      if (external.length) {
+      // ── Clone & register external skill repos ────────────────────────────
+      if (externalSkills.length) {
         const cacheRoot = join(homedir(), ".cache", "opencode", "external-skills")
         if (!existsSync(cacheRoot)) mkdirSync(cacheRoot, { recursive: true })
 
-        for (const ext of external) {
+        for (const ext of externalSkills) {
           if (!ext?.name || !ext?.url) continue
           const ref = ext.ref || "main"
           const skillsPath = ext.skillsPath || "skills"

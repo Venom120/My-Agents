@@ -63,20 +63,18 @@ Restart opencode after changing config.
 
 ### External skills
 
-The plugin also supports **external skill repos** via a custom `externalSkills`
-field in your config. Each entry is auto-cloned (shallow, cached at
+The plugin supports **external skill repos** via plugin options (tuple form).
+Each entry is auto-cloned (shallow, cached at
 `~/.cache/opencode/external-skills/<name>/`) and registered on startup:
 
 ```jsonc
 {
-  "plugin": ["my-agents@git+https://github.com/Venom120/My-Agents.git#main"],
-  "externalSkills": [
-    {
-      "name": "shopify-ai-toolkit",
-      "url": "https://github.com/Shopify/shopify-ai-toolkit.git",
-      "ref": "main",
-      "skillsPath": "skills"
-    }
+  "plugin": [
+    ["my-agents@git+https://github.com/Venom120/My-Agents.git#main", {
+      "externalSkills": [
+        { "name": "shopify-ai-toolkit", "url": "https://github.com/Shopify/shopify-ai-toolkit.git", "ref": "main", "skillsPath": "skills" }
+      ]
+    }]
   ]
 }
 ```
@@ -86,6 +84,9 @@ Fields: `name` (cache folder), `url` (git URL), `ref` (branch/tag/SHA, default
 
 To add more repos, append to `externalSkills` — no plugin code changes needed.
 On first startup each repo is cloned; subsequent starts reuse the cache.
+
+> You can also put an `external-skills.json` file in the repo root (same
+> format) as a fallback if you prefer not to use plugin options.
 
 ## Editing
 

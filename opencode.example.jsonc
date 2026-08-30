@@ -4,11 +4,13 @@
   // The plugin registers both from the repo's agents/ and skills/ folders.
   // Adjust the owner/branch if you forked or renamed the repo.
   "plugin": [
-    "my-agents@git+https://github.com/Venom120/My-Agents.git#main"
-  ],
-  // External skill repos — auto-cloned to ~/.cache/opencode/external-skills/
-  // and registered on startup. Add more repos here as needed.
-  "externalSkills": [
-    { "name": "shopify-ai-toolkit", "url": "https://github.com/Shopify/shopify-ai-toolkit.git", "ref": "main", "skillsPath": "skills" }
+    "superpowers@git+https://github.com/obra/superpowers.git",
+    ["my-agents@git+https://github.com/Venom120/My-Agents.git#main", {
+      // External skill repos — auto-cloned to ~/.cache/opencode/external-skills/
+      // and registered on startup. Add more repos here as needed.
+      "externalSkills": [
+        { "name": "shopify-ai-toolkit", "url": "https://github.com/Shopify/shopify-ai-toolkit.git", "ref": "main", "skillsPath": "skills" }
+      ]
+    }]
   ]
 }
