@@ -1,6 +1,13 @@
-import { readdirSync, readFileSync } from "node:fs"
+import { readdirSync, readFileSync, existsSync, mkdirSync } from "node:fs"
+import { exec } from "node:child_process"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
+import { homedir } from "node:os"
+import { promisify } from "node:util"
+
+const execAsync = promisify(exec)
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function parseScalar(raw) {
   const t = raw.trim()
@@ -57,14 +64,18 @@ function parseYaml(lines) {
   return walk(0)
 }
 
+// ── Plugin entry ─────────────────────────────────────────────────────────────
+
 export default async function () {
   const agentsDir = join(
     dirname(fileURLToPath(import.meta.url)),
     "..",
     "agents",
   )
+
   return {
-    config(config) {
+    async config(config) {
+      // ── Register agents ──────────────────────────────────────────────────
       for (const file of readdirSync(agentsDir)) {
         if (!file.endsWith(".md")) continue
         const raw = readFileSync(join(agentsDir, file), "utf8")
@@ -82,11 +93,46 @@ export default async function () {
         }
       }
 
-      // Expose this repo's skills/ folder so skills load too (no local clone needed).
-      const skillsDir = join(dirname(fileURLToPath(import.meta.url)), "..", "skills")
+      // ── Register this repo's skills ──────────────────────────────────────
+      const skillsDir = join(
+        dirname(fileURLToPath(import.meta.url)),
+        "..",
+        "skills",
+      )
       config.skills = config.skills ?? {}
       const paths = Array.isArray(config.skills.paths) ? config.skills.paths : []
       if (!paths.includes(skillsDir)) paths.push(skillsDir)
+
+      // ── Clone & register external skills from config ─────────────────────
+      const external = Array.isArray(config.externalSkills) ? config.externalSkills : []
+      if (external.length) {
+        const cacheRoot = join(homedir(), ".cache", "opencode", "external-skills")
+        if (!existsSync(cacheRoot)) mkdirSync(cacheRoot, { recursive: true })
+
+        for (const ext of external) {
+          if (!ext?.name || !ext?.url) continue
+          const ref = ext.ref || "main"
+          const skillsPath = ext.skillsPath || "skills"
+          const cacheDir = join(cacheRoot, ext.name)
+
+          try {
+            if (!existsSync(cacheDir)) {
+              console.log(`[my-agents] cloning ${ext.name} …`)
+              await execAsync(
+                `git clone --depth 1 --branch ${ref} ${ext.url} ${cacheDir}`,
+                { timeout: 60_000 },
+              )
+            }
+            const extSkills = join(cacheDir, skillsPath)
+            if (existsSync(extSkills) && !paths.includes(extSkills)) {
+              paths.push(extSkills)
+            }
+          } catch (err) {
+            console.error(`[my-agents] failed to clone ${ext.name}:`, err.message)
+          }
+        }
+      }
+
       config.skills.paths = paths
     },
   }
