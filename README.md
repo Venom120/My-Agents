@@ -111,7 +111,7 @@ artifact consumed by the next stage.
 | Agent | Model | Role |
 |---|---|---|
 | researcher | `muse-spark-1.2-contributor` | Deep exploration, architecture research |
-| designer | `hy3` | Architecture/design reasoning |
+| designer | `nemotron-3-ultra` | Architecture/design reasoning |
 | implementer | `mimo-v2.5` | Multi-file implementation |
 | optimizer | `muse-spark-1.2-contributor` | Performance/security optimization |
 | tester | `muse-spark-1.2-contributor` | Test creation, coverage analysis |

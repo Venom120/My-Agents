@@ -106,24 +106,6 @@ You must determine what the coding agent actually needs to do, then select the m
 
 ---
 
-### 6. NEMOTRON 3.5 LIGHTNING FREE
-
-**Architecture:** 30B total, ~3B active.
-
-**Context:** ~262K tokens | **Output:** ~262K tokens | **Input:** Text
-
-**Reasoning:** Reasoning model.
-
-**Core strengths:** Fast execution, coding, reasoning, tool calling, agentic workflows, high efficiency, repetitive work, sub-agent workloads.
-
-**Best suited for:** Small/medium coding tasks, straightforward implementation, quick fixes, repetitive changes, boilerplate, test execution + simple fixes, repository exploration, sub-agent tasks, tool-heavy but relatively straightforward work, tasks where speed is more important than maximum reasoning depth.
-
-**Do NOT choose for:** Huge repository-wide architectural changes, extremely complicated system design, tasks requiring enormous amounts of repository context.
-
-**Think of as:** "Give me a well-defined coding job and I'll do it quickly."
-
----
-
 ## MODEL SUMMARY
 
 | Model | Think of as | Context | Multimodal |
@@ -133,7 +115,6 @@ You must determine what the coding agent actually needs to do, then select the m
 | MIMO V2.5 | Large system interpreter | 1M | Yes |
 | MUSE SPARK 1.2 | Practical builder | 1M | Yes |
 | NEMOTRON 3 ULTRA | Architect-level reasoner | 1M | No |
-| NEMOTRON 3.5 LIGHTNING | Fast workhorse | ~262K | No |
 
 ---
 
@@ -183,11 +164,6 @@ Analyze the task across these dimensions:
 - Efficient execution, long-horizon workflows
 - Especially interesting for finance-related tasks
 
-### Choose NEMOTRON 3.5 LIGHTNING when:
-- Well defined, relatively straightforward
-- Small/medium scope, repetitive, tool-heavy
-- Speed-sensitive, suitable for a sub-agent
-
 ### Choose BIG PICKLE when:
 - Small, straightforward, low-risk
 - Doesn't require huge repository context, multimodal input, or deep architecture reasoning
@@ -200,7 +176,7 @@ Analyze the task across these dimensions:
 
 **Instead use:** "How much of the codebase must the model understand, how difficult is the reasoning, how interconnected is the change, and how much implementation must it perform?"
 
-- Huge codebase + simple isolated change → May still be Nemotron 3.5 Lightning or Big Pickle
+- Huge codebase + simple isolated change → May still be Big Pickle
 - Huge codebase + entity relationship analysis → MiMo V2.5 may be better
 - Huge codebase + architectural/database/authorization change → Nemotron 3 Ultra may be better
 - Medium codebase + complex algorithmic reasoning → Ling 3.0 Flash Fin may be better

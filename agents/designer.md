@@ -1,7 +1,7 @@
 ---
 description: System design, API design, and architecture planning specialist. Use for architecture decisions, schema design, API planning, Mermaid diagrams, and scalability analysis.
 mode: all
-model: opencode/hy3-free
+model: opencode/nemotron-3.ultra-free
 permission:
   edit:
     "*": "deny"
