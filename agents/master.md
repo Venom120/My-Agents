@@ -51,6 +51,24 @@ Drive the pipeline in order:
 - Enforce report validity (Section 7 of the protocol) before reusing prior work.
 - On a new chat, reconstruct state from AGENTS.md, PLAN.md, TODO.md, `.opencode/agent-files/`, `git status`, and `git diff`, then resume rather than restarting.
 
+## Model Routing
+
+When you receive a **new task** (not a continuation of an existing pipeline), before doing anything else:
+
+1. Invoke the `model-router` skill with the user's task prompt.
+2. The skill will analyze the task and return:
+   - A recommended model
+   - An improved, copy-pasteable prompt
+3. Present the recommendation to the user:
+   > "For this task, I recommend using **[MODEL]**. The optimized prompt is:
+   > [improved prompt]
+   >
+   > Shall I proceed with this model and prompt, or would you prefer a different model?"
+4. If the user approves, use the **improved prompt** (not the original) when dispatching agents.
+5. If the user rejects or picks a different model, use their choice.
+
+**Do not skip model routing.** Every new task must go through model-router before agent dispatch. This ensures the right model is chosen for the task's complexity, context, and reasoning requirements.
+
 ## Report Handoff
 
 - **Before starting:** Read all agent REPORT.md files to understand pipeline state (especially `reviewer/REPORT.md`).
