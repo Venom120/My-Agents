@@ -108,15 +108,37 @@ artifact consumed by the next stage.
 
     Researcher → Designer → Implementer → Optimizer → Tester → Reviewer → Master
 
-| Agent | Model | Role |
+### Direct OpenCode Specialists (Preserved)
+
+These models are fixed assignments for specific pipeline agents — they do **not** route through OmniRoute.
+
+| Agent | Direct Model | Role |
 |---|---|---|
-| researcher | `muse-spark-1.2-contributor` | Deep exploration, architecture research |
-| designer | `nemotron-3-ultra` | Architecture/design reasoning |
-| implementer | `mimo-v2.5` | Multi-file implementation |
-| optimizer | `muse-spark-1.2-contributor` | Performance/security optimization |
-| tester | `muse-spark-1.2-contributor` | Test creation, coverage analysis |
-| reviewer | `mimo-v2.5` | Independent quality review |
-| master | `nemotron-3-ultra` | Pipeline orchestration, final integration |
+| researcher | `opencode/muse-spark-1.2-contributor-free` | Deep exploration, architecture research |
+| designer | `opencode/nemotron-3-ultra-free` | Architecture/design reasoning |
+| implementer | `opencode/mimo-v2.5-free` | Multi-file implementation |
+| optimizer | `opencode/muse-spark-1.2-contributor-free` | Performance/security optimization |
+| tester | `opencode/muse-spark-1.2-contributor-free` | Test creation, coverage analysis |
+| reviewer | `opencode/mimo-v2.5-free` | Independent quality review |
+| master | `opencode/nemotron-3-ultra-free` | Pipeline orchestration, final integration |
+
+### OmniRoute Combos (Interchangeable Layer)
+
+For workloads **outside** the fixed specialist domains, the `model-router` skill selects an OmniRoute combo:
+
+| Combo | Strategy | Purpose |
+|---|---|---|
+| `agent-deep` | `priority` | Architecture, deep debugging, complex repo work, multi-file changes |
+| `agent-coding` | `priority` | Implementation, refactoring, code generation, existing-code modifications |
+| `agent-reasoning` | `priority` | Planning, architecture, trade-offs, difficult reasoning |
+| `agent-vision` | `priority` | Screenshots, UI debugging, visual inspection, multimodal coding |
+| `agent-context` | `context-optimized` | Whole-repo analysis, large documents, long sessions |
+| `agent-fast` | `auto` | Small fixes, quick questions, simple sub-agent tasks |
+| `agent-fallback` | `lkgp` | Recovery, last-known-good continuation |
+
+**Hard constraints:** tool calling mandatory for agent combos; thinking variants precede no-think; free models only; removed providers (DeepSeek, Cerebras, Moonshot) never reintroduced; NVIDIA GPT-OSS without tool calling excluded.
+
+The Master Agent invokes `model-router` for every new task. The router classifies the workload and recommends either a direct specialist or an OmniRoute combo, with an improved prompt.
 
 The Master Agent orchestrates the pipeline and reconstructs state from the
 root `AGENTS.md` / `PLAN.md` / `TODO.md`, the agent workspaces, and git

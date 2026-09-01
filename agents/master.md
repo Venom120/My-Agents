@@ -56,18 +56,31 @@ Drive the pipeline in order:
 When you receive a **new task** (not a continuation of an existing pipeline), before doing anything else:
 
 1. Invoke the `model-router` skill with the user's task prompt.
-2. The skill will analyze the task and return:
-   - A recommended model
-   - An improved, copy-pasteable prompt
+2. The skill will analyze the task and return a **route recommendation**:
+   - **Direct Specialist** — an agent with a fixed OpenCode model assignment (e.g., `designer: opencode/nemotron-3-ultra-free`)
+   - **OmniRoute Combo** — one of `agent-deep`, `agent-coding`, `agent-reasoning`, `agent-vision`, `agent-context`, `agent-fast`, `agent-fallback`
+   - An improved, copy-pasteable prompt optimized for that route
 3. Present the recommendation to the user:
-   > "For this task, I recommend using **[MODEL]**. The optimized prompt is:
+   > "For this task, I recommend **[Direct Specialist: agent/model]** / **[OmniRoute: combo-name]**.
+   > The optimized prompt is:
    > [improved prompt]
    >
-   > Shall I proceed with this model and prompt, or would you prefer a different model?"
+   > Shall I proceed with this route and prompt, or would you prefer a different approach?"
 4. If the user approves, use the **improved prompt** (not the original) when dispatching agents.
-5. If the user rejects or picks a different model, use their choice.
+5. If the user rejects or picks a different route, use their choice.
 
-**Do not skip model routing.** Every new task must go through model-router before agent dispatch. This ensures the right model is chosen for the task's complexity, context, and reasoning requirements.
+**Do not skip model routing.** Every new task must go through `model-router` before agent dispatch. This ensures the correct routing path — preserving direct specialists for their proven domains, and using OmniRoute as the interchangeable layer for other workloads.
+
+**Direct specialists (preserved):**
+- Researcher → `opencode/muse-spark-1.2-contributor-free`
+- Designer → `opencode/nemotron-3-ultra-free`
+- Implementer → `opencode/mimo-v2.5-free`
+- Optimizer → `opencode/muse-spark-1.2-contributor-free`
+- Tester → `opencode/muse-spark-1.2-contributor-free`
+- Reviewer → `opencode/mimo-v2.5-free`
+- Master → `opencode/nemotron-3-ultra-free`
+
+If the task maps to one of these agents' core domain, the router will recommend the direct specialist. Otherwise, it selects the appropriate OmniRoute combo.
 
 ## Report Handoff
 

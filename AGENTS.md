@@ -35,3 +35,16 @@ repo and override agent-specific rules when they conflict.
     file, always use the `read` tool. When searching, always use `grep` or
     `glob` tools. Fall back to shell commands only when the appropriate tool
     is not available.
+
+13. **Model Routing Policy.** The `model-router` skill is the central model-selection
+    authority. Direct OpenCode specialists are preserved for specific agents:
+    Researcher → Muse Spark 1.2 Contributor, Designer → Nemotron 3 Ultra,
+    Implementer → MiMo V2.5, Optimizer → Muse Spark 1.2 Contributor,
+    Tester → Muse Spark 1.2 Contributor, Reviewer → MiMo V2.5,
+    Master → Nemotron 3 Ultra. For all other workloads, the router selects
+    an OmniRoute combo: `agent-deep`, `agent-coding`, `agent-reasoning`,
+    `agent-vision`, `agent-context`, `agent-fast`, `agent-fallback`.
+    Hard constraints: tool calling mandatory for agent combos; thinking variants
+    precede no-think; free models only; removed providers (DeepSeek, Cerebras,
+    Moonshot) never reintroduced; NVIDIA GPT-OSS without tool calling excluded.
+    Context length does not equal codebase understanding.
