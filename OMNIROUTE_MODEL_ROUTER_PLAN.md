@@ -55,7 +55,41 @@ The goal is to combine intelligent model routing with the existing Researcher �
 
 ---
 
-## 3. Separation of Responsibilities
+## 3. Master Model Strategy
+
+The Master uses a stable reasoning-oriented OmniRoute combo:
+
+```text
+model: omniroute/free-reasoning
+```
+
+The Master is intentionally **not** dynamically routed through the six task routes.
+
+This creates two distinct planes:
+
+```text
+CONTROL PLANE
+Master
+  ↓
+omniroute/free-reasoning
+
+EXECUTION PLANE
+Pipeline Worker
+  ↓
+approved route
+  ↓
+OmniRoute Engine Combo
+```
+
+This separation keeps orchestration behavior consistent while allowing the actual
+pipeline execution to use the route best suited to the user's task.
+
+The Master should remain on `free-reasoning` even when the selected execution route
+is `omni-fast`, `omni-context`, `omni-vision`, or another route.
+
+---
+
+## 4. Separation of Responsibilities
 
 ### Master
 
@@ -120,7 +154,7 @@ It handles:
 
 ---
 
-## 4. Six Automatic Routes
+## 5. Six Automatic Routes
 
 The architecture exposes exactly six automatic routes:
 
@@ -137,7 +171,7 @@ The existing `ClaudeCode-Stack` combo remains outside automatic routing.
 
 ---
 
-## 5. Why Six Workers Instead of One Worker Per Stage
+## 6. Why Six Workers Instead of One Worker Per Stage
 
 OpenCode's task/subagent mechanism does not provide the clean architecture we want for dynamically selecting an arbitrary model for every invocation.
 
@@ -188,7 +222,7 @@ The worker is therefore a route wrapper, not a duplicate stage definition.
 
 ---
 
-## 6. Canonical Pipeline
+## 7. Canonical Pipeline
 
 The normal pipeline is:
 
@@ -228,7 +262,7 @@ Previous report:
 
 ---
 
-## 7. Route Selection
+## 8. Route Selection
 
 The model-router uses this priority:
 
@@ -272,7 +306,7 @@ Choose `omni-fast` for small, straightforward tasks.
 
 ---
 
-## 8. Pipeline Mode
+## 9. Pipeline Mode
 
 The router also returns one of:
 
@@ -296,7 +330,7 @@ The Master makes the final execution decision after the route is approved.
 
 ---
 
-## 9. Route Lock
+## 10. Route Lock
 
 Routing occurs once for the user task.
 
@@ -340,7 +374,7 @@ A new route should be selected only when the Master determines that the requirem
 
 ---
 
-## 10. Stage Artifacts
+## 11. Stage Artifacts
 
 The pipeline uses:
 
@@ -362,7 +396,7 @@ The important rule is that each stage leaves a report that the next stage can co
 
 ---
 
-## 11. Stage Handoff
+## 12. Stage Handoff
 
 A stage handoff should contain:
 
@@ -381,7 +415,7 @@ The next worker should not have to reconstruct the entire history from scratch w
 
 ---
 
-## 12. Approval Flow
+## 13. Approval Flow
 
 The Master presents:
 
@@ -422,7 +456,7 @@ The Master pauses only when:
 
 ---
 
-## 13. Worker Rules
+## 14. Worker Rules
 
 Every pipeline worker must:
 
@@ -443,7 +477,7 @@ Every worker must not:
 
 ---
 
-## 14. Failure Handling
+## 15. Failure Handling
 
 If a worker fails:
 
@@ -457,7 +491,7 @@ OmniRoute remains responsible for normal provider-level retries, cooldowns, and 
 
 ---
 
-## 15. Why Routing Once Is Better
+## 16. Why Routing Once Is Better
 
 Re-routing every stage would allow:
 
@@ -495,7 +529,7 @@ The Master can still intentionally change the route if the task fundamentally ch
 
 ---
 
-## 16. Implementation Files
+## 17. Implementation Files
 
 The implementation consists of:
 
@@ -529,7 +563,7 @@ Reviewer
 
 ---
 
-## 17. Final Architecture
+## 18. Final Architecture
 
 ```text
                     ┌─────────────────┐
@@ -572,3 +606,4 @@ Reviewer
 ```
 
 This is the target architecture for the implementation.
+
