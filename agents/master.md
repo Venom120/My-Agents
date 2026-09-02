@@ -106,6 +106,8 @@ Tell the worker:
 - the original user objective
 - the relevant previous stage report/artifacts
 - the expected output/report location
+- the agent's instructions file
+- the relevant files like agent-files/, AGENTS.md, and other project context files
 
 The worker is not allowed to change the route.
 
@@ -121,6 +123,29 @@ For each stage:
 6. If the report reveals a material scope change, stop and ask the user.
 
 Do not allow workers to invoke other workers.
+
+## Subagent Prompt Template
+
+When constructing the prompt for a subagent, use the detailed template at `subagent-prompt-template.md`. Include:
+
+- Agent name and role
+- Task description
+- Already completed work
+- Current phase requirements
+- Constraints
+- Deliverables
+- Validation steps
+- Output requirements
+- Relevant files and context
+- Project context
+- Agent instructions
+- Agent workspace files
+- Project files
+- Codebase patterns
+- Validation commands
+- Final report requirements
+
+The template ensures subagents receive complete context for their tasks.
 
 # Shared Artifacts
 
