@@ -1,14 +1,16 @@
 # My-Agents DSH bundle
 #
-# The preset-sync plugin is loaded from the installed My-Agents package so
-# its path is stable regardless of the DSH profile working directory.
+# The package root is a dual-runtime entry point: DSH consumes its named
+# `apply` export, while OpenCode consumes the default export. This means the
+# loader can resolve the installed bundle by its package name without relying
+# on a profile-relative subpath.
 #
 # The web profile already provides an `agent-presets` row. Override that
 # existing row instead of inserting another row with the same id.
 
 - insert:
     - id: my-agents-preset-sync
-      name: my-agents-opencode-plugin/dsh-sync
+      name: my-agents-opencode-plugin
 
 - id: agent-presets
   name: '@deepseek-ai/dsh-agent-presets'

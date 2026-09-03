@@ -17,8 +17,16 @@ export function apply(ctx) {
   const targetRoot = join(dshHome, ".agent-presets", "my-agents")
 
   mkdirSync(targetRoot, { recursive: true })
-  syncFile(join(sourceRoot, "agent.cordis.yml"), join(targetRoot, "agent.cordis.yml"))
-  syncFile(join(sourceRoot, "preset.yml"), join(targetRoot, "preset.yml"))
+  syncFile(
+    join(sourceRoot, "agent.cordis.yml"),
+    join(targetRoot, "agent.cordis.yml")
+  )
+  syncFile(
+    join(sourceRoot, "preset.yml"),
+    join(targetRoot, "preset.yml")
+  )
 
-  ctx.logger?.info?.("[my-agents] synchronized DSH preset to " + targetRoot)
+  ctx.logger?.info?.(
+    "[my-agents] synchronized DSH preset to " + targetRoot
+  )
 }
