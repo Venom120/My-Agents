@@ -1,15 +1,14 @@
 # My-Agents DSH bundle
 #
-# The preset-sync plugin copies the My-Agents preset into:
-#   $DSH_HOME/.agent-presets/my-agents
+# The preset-sync plugin is loaded from the installed My-Agents package so
+# its path is stable regardless of the DSH profile working directory.
 #
-# The web profile already provides an `agent-presets` row.
-# Override that existing row instead of inserting another row with
-# the same id.
+# The web profile already provides an `agent-presets` row. Override that
+# existing row instead of inserting another row with the same id.
 
 - insert:
     - id: my-agents-preset-sync
-      name: ./sync-preset.js
+      name: my-agents-opencode-plugin/dsh-sync
 
 - id: agent-presets
   name: '@deepseek-ai/dsh-agent-presets'
