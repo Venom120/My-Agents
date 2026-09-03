@@ -1,6 +1,6 @@
 {
   "name": "my-agents-opencode-plugin",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "private": true,
   "type": "module",
   "main": "./plugin/load-agents.ts",
@@ -10,6 +10,7 @@
     }
   },
   "exports": {
-    ".": "./plugin/load-agents.ts"
+    ".": "./plugin/load-agents.ts",
+    "./dsh-sync": "./dsh/sync-preset.js"
   }
 }
