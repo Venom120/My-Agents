@@ -145,6 +145,7 @@
         agentOptions:
           provider: omniroute
           model: free-coding-deep
+          reasoningEffort: high
           maxTokens: 64000
         persona:
           text: |-
@@ -167,6 +168,7 @@
         agentOptions:
           provider: omniroute
           model: free-coding-standard
+          reasoningEffort: high
           maxTokens: 64000
         persona:
           text: |-
@@ -211,6 +213,7 @@
         agentOptions:
           provider: omniroute
           model: free-reasoning
+          reasoningEffort: high
           maxTokens: 64000
         persona:
           text: |-
@@ -233,6 +236,7 @@
         agentOptions:
           provider: omniroute
           model: free-context
+          reasoningEffort: high
           maxTokens: 64000
         persona:
           text: |-
@@ -255,6 +259,7 @@
         agentOptions:
           provider: omniroute
           model: free-vision
+          reasoningEffort: high
           maxTokens: 64000
         persona:
           text: |-
