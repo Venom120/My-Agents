@@ -1,16 +1,19 @@
 # My-Agents DSH bundle
 #
-# This bundle keeps the Git repository as the source of truth. On load it
-# synchronizes dsh/agent-presets/my-agents into $DSH_HOME/.agent-presets/my-agents.
+# The preset-sync plugin copies the My-Agents preset into:
+#   $DSH_HOME/.agent-presets/my-agents
+#
+# The web profile already provides an `agent-presets` row.
+# Override that existing row instead of inserting another row with
+# the same id.
 
 - insert:
     - id: my-agents-preset-sync
       name: ./sync-preset.js
 
-- insert:
-    - id: agent-presets
-      name: '@deepseek-ai/dsh-agent-presets'
-      config:
-        default: my-agents
-        includeShippedRoot: true
-        includeUserRoot: true
+- id: agent-presets
+  name: '@deepseek-ai/dsh-agent-presets'
+  config:
+    default: my-agents
+    includeShippedRoot: true
+    includeUserRoot: true
