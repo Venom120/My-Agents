@@ -12,7 +12,7 @@ function syncFile(source, target) {
 
 export function apply(ctx) {
   const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
-  const sourceRoot = join(packageRoot, "agent-presets", "my-agents")
+  const sourceRoot = join(packageRoot, "dsh", "agent-presets", "my-agents")
   const dshHome = process.env.DSH_HOME || join(homedir(), ".dsh")
   const targetRoot = join(dshHome, ".agent-presets", "my-agents")
 
