@@ -2,7 +2,18 @@ import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 
-function parseScalar(raw: string): unknown {
+interface YamlObject {
+  [key: string]: YamlValue
+}
+
+type YamlValue =
+  | string
+  | number
+  | boolean
+  | null
+  | YamlObject
+
+function parseScalar(raw: string): YamlValue {
   const value = raw.trim()
 
   if (
@@ -15,92 +26,190 @@ function parseScalar(raw: string): unknown {
   if (value === "true") return true
   if (value === "false") return false
   if (value === "null" || value === "~") return null
-  if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value)
+
+  if (/^-?\d+(?:\.\d+)?$/.test(value)) {
+    return Number(value)
+  }
 
   return value
 }
 
-function splitKey(line: string): [string, string] | null {
-  const match = line.match(
-    /^("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^:]+):(.*)$/,
-  )
-
-  if (!match) return null
-
-  let key = match[1].trim()
+function parseKey(raw: string): string {
+  const key = raw.trim()
 
   if (
     (key.startsWith('"') && key.endsWith('"')) ||
     (key.startsWith("'") && key.endsWith("'"))
   ) {
-    key = key.slice(1, -1)
+    return key.slice(1, -1)
   }
 
-  return [key, match[2].trim()]
+  return key
 }
 
-function parseYaml(lines: string[]): Record<string, unknown> {
-  const result: Record<string, unknown> = {}
+/**
+ * Parses the small YAML subset used by My-Agents frontmatter.
+ *
+ * Supports:
+ * - scalar values
+ * - nested mappings
+ *
+ * This is sufficient for fields such as:
+ *
+ * permission:
+ *   edit: allow
+ *   task:
+ *     "*": deny
+ */
+function parseYamlObject(text: string): Record<string, YamlValue> {
+  const root: Record<string, YamlValue> = {}
 
-  for (const line of lines) {
-    const trimmed = line.trim()
+  const stack: Array<{
+    indent: number
+    value: Record<string, YamlValue>
+  }> = [
+    {
+      indent: -1,
+      value: root,
+    },
+  ]
 
-    if (!trimmed || trimmed.startsWith("#")) continue
+  for (const line of text.split(/\r?\n/)) {
+    if (!line.trim()) continue
+    if (line.trimStart().startsWith("#")) continue
 
-    const pair = splitKey(trimmed)
-    if (!pair) continue
+    const indent = line.match(/^ */)?.[0].length ?? 0
+    const content = line.trim()
 
-    const [key, value] = pair
-    result[key] = parseScalar(value)
-  }
+    const separator = content.indexOf(":")
 
-  return result
-}
+    if (separator <= 0) continue
 
-export default async function MyAgentsPlugin(ctx: any) {
-  const agentsDir = join(
-    join(fileURLToPath(new URL(".", import.meta.url)), ".."),
-    "agents",
-  )
+    const key = parseKey(content.slice(0, separator))
+    const rawValue = content.slice(separator + 1).trim()
 
-  await ctx.agent.transform((draft: any) => {
-    for (const file of readdirSync(agentsDir).sort()) {
-      if (!file.endsWith(".md")) continue
+    while (
+      stack.length > 1 &&
+      indent <= stack[stack.length - 1].indent
+    ) {
+      stack.pop()
+    }
 
-      const raw = readFileSync(join(agentsDir, file), "utf8")
-      const frontmatter = raw.match(
-        /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/,
-      )
+    const parent = stack[stack.length - 1].value
 
-      if (!frontmatter) continue
+    if (!rawValue) {
+      const child: Record<string, YamlValue> = {}
 
-      const metadata = parseYaml(frontmatter[1].split(/\r?\n/))
-      const name =
-        typeof metadata.name === "string" && metadata.name.length > 0
-          ? metadata.name
-          : file.replace(/\.md$/, "")
+      parent[key] = child
 
-      delete metadata.name
-
-      draft.update(name, (agent: any) => {
-        Object.assign(agent, metadata)
-        agent.system = raw.slice(frontmatter[0].length).trim()
+      stack.push({
+        indent,
+        value: child,
       })
 
-      if (!draft.get(name)) {
-        // update() is intentionally used above for existing agents. For custom
-        // agents, register the complete definition through the draft API.
-        draft.add(name, {
-          ...metadata,
-          system: raw.slice(frontmatter[0].length).trim(),
-        })
-      }
+      continue
     }
 
-    if (draft.get("master")) {
-      draft.default("master")
-    }
-  })
+    parent[key] = parseScalar(rawValue)
+  }
 
-  console.log("[my-agents] agents loaded")
+  return root
 }
+
+function readAgent(file: string) {
+  const raw = readFileSync(file, "utf8")
+
+  const match = raw.match(
+    /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/,
+  )
+
+  if (!match) {
+    return undefined
+  }
+
+  const metadata = parseYamlObject(match[1])
+
+  const name =
+    typeof metadata.name === "string" &&
+    metadata.name.length > 0
+      ? metadata.name
+      : file
+          .replace(/\.md$/, "")
+          .split(/[\\/]/)
+          .pop()
+
+  if (!name) {
+    return undefined
+  }
+
+  delete metadata.name
+
+  return {
+    name,
+    ...metadata,
+    prompt: raw.slice(match[0].length).trim(),
+  }
+}
+
+/**
+ * OpenCode 1.18.x plugin.
+ *
+ * The config hook receives the live merged configuration.
+ * My-Agents injects the agents from this package into config.agent.
+ *
+ * This is intentionally different from ctx.agent.transform():
+ * the transform API is not the mechanism OpenCode 1.18.x uses
+ * to introduce arbitrary new agent definitions.
+ */
+export const server = async () => ({
+  config: async (config: any) => {
+    const agentsDir = join(
+      fileURLToPath(new URL(".", import.meta.url)),
+      "..",
+      "agents",
+    )
+
+    const agents: Record<string, Record<string, unknown>> = {}
+
+    for (const file of readdirSync(agentsDir).sort()) {
+      if (!file.endsWith(".md")) {
+        continue
+      }
+
+      const agent = readAgent(join(agentsDir, file))
+
+      if (!agent) {
+        continue
+      }
+
+      const { name, ...definition } = agent
+
+      agents[name] = definition
+    }
+
+    /*
+     * My-Agents provides the defaults.
+     *
+     * Existing user/project configuration wins over the
+     * repository defaults.
+     */
+    config.agent = {
+      ...agents,
+      ...(config.agent ?? {}),
+    }
+
+    /*
+     * Master is the default only when the user has not
+     * explicitly selected another default agent.
+     */
+    if (!config.default_agent) {
+      config.default_agent = "master"
+    }
+
+    console.log(
+      `[my-agents] loaded ${Object.keys(agents).length} agents from ${agentsDir}`,
+    )
+  },
+})
+
+export default server
