@@ -1,215 +1,228 @@
-import { readdirSync, readFileSync } from "node:fs"
-import { join } from "node:path"
+import {
+  readdirSync,
+  readFileSync,
+  existsSync,
+  mkdirSync,
+} from "node:fs"
+import { exec } from "node:child_process"
+import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
+import { homedir } from "node:os"
+import { promisify } from "node:util"
 
-interface YamlObject {
-  [key: string]: YamlValue
-}
+const execAsync = promisify(exec)
 
-type YamlValue =
-  | string
-  | number
-  | boolean
-  | null
-  | YamlObject
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-function parseScalar(raw: string): YamlValue {
-  const value = raw.trim()
+function parseScalar(raw) {
+  const t = raw.trim()
 
   if (
-    (value.startsWith('"') && value.endsWith('"')) ||
-    (value.startsWith("'") && value.endsWith("'"))
+    (t.startsWith('"') && t.endsWith('"')) ||
+    (t.startsWith("'") && t.endsWith("'"))
   ) {
-    return value.slice(1, -1)
+    return t.slice(1, -1)
   }
 
-  if (value === "true") return true
-  if (value === "false") return false
-  if (value === "null" || value === "~") return null
+  if (t === "true") return true
+  if (t === "false") return false
+  if (t === "null" || t === "~" || t === "") return null
+  if (/^-?\d+(\.\d+)?$/.test(t)) return Number(t)
 
-  if (/^-?\d+(?:\.\d+)?$/.test(value)) {
-    return Number(value)
-  }
-
-  return value
+  return t
 }
 
-function parseKey(raw: string): string {
-  const key = raw.trim()
+function splitKey(text) {
+  const m = text.match(
+    /^("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^:]+):(.*)$/,
+  )
+
+  if (!m) return null
+
+  let key = m[1].trim()
 
   if (
     (key.startsWith('"') && key.endsWith('"')) ||
     (key.startsWith("'") && key.endsWith("'"))
   ) {
-    return key.slice(1, -1)
+    key = key.slice(1, -1)
   }
 
-  return key
+  return [key, m[2].trim()]
 }
 
-/**
- * Parses the small YAML subset used by My-Agents frontmatter.
- *
- * Supports:
- * - scalar values
- * - nested mappings
- *
- * This is sufficient for fields such as:
- *
- * permission:
- *   edit: allow
- *   task:
- *     "*": deny
- */
-function parseYamlObject(text: string): Record<string, YamlValue> {
-  const root: Record<string, YamlValue> = {}
+function parseYaml(lines) {
+  let i = 0
 
-  const stack: Array<{
-    indent: number
-    value: Record<string, YamlValue>
-  }> = [
-    {
-      indent: -1,
-      value: root,
-    },
-  ]
+  function walk(indent) {
+    const obj = {}
 
-  for (const line of text.split(/\r?\n/)) {
-    if (!line.trim()) continue
-    if (line.trimStart().startsWith("#")) continue
+    while (i < lines.length) {
+      const line = lines[i]
+      const trimmed = line.trim()
 
-    const indent = line.match(/^ */)?.[0].length ?? 0
-    const content = line.trim()
+      if (!trimmed || trimmed.startsWith("#")) {
+        i += 1
+        continue
+      }
 
-    const separator = content.indexOf(":")
+      const cur = line.length - line.trimStart().length
 
-    if (separator <= 0) continue
+      if (cur < indent) break
 
-    const key = parseKey(content.slice(0, separator))
-    const rawValue = content.slice(separator + 1).trim()
+      const kv = splitKey(trimmed)
 
-    while (
-      stack.length > 1 &&
-      indent <= stack[stack.length - 1].indent
-    ) {
-      stack.pop()
+      if (!kv) {
+        i += 1
+        continue
+      }
+
+      const [key, rest] = kv
+
+      i += 1
+
+      obj[key] = rest === ""
+        ? walk(cur + 1)
+        : parseScalar(rest)
     }
 
-    const parent = stack[stack.length - 1].value
-
-    if (!rawValue) {
-      const child: Record<string, YamlValue> = {}
-
-      parent[key] = child
-
-      stack.push({
-        indent,
-        value: child,
-      })
-
-      continue
-    }
-
-    parent[key] = parseScalar(rawValue)
+    return obj
   }
 
-  return root
+  return walk(0)
 }
 
-function readAgent(file: string) {
-  const raw = readFileSync(file, "utf8")
+// ── Plugin entry ─────────────────────────────────────────────────────────────
 
-  const match = raw.match(
-    /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/,
+export default async function (_input, options) {
+  const repoRoot = join(
+    dirname(fileURLToPath(import.meta.url)),
+    "..",
   )
 
-  if (!match) {
-    return undefined
-  }
+  const agentsDir = join(repoRoot, "agents")
 
-  const metadata = parseYamlObject(match[1])
-
-  const name =
-    typeof metadata.name === "string" &&
-    metadata.name.length > 0
-      ? metadata.name
-      : file
-          .replace(/\.md$/, "")
-          .split(/[\\/]/)
-          .pop()
-
-  if (!name) {
-    return undefined
-  }
-
-  delete metadata.name
+  // externalSkills comes from the second element of the plugin tuple:
+  //
+  // ["my-agents@...", {
+  //   "externalSkills": [...]
+  // }]
+  //
+  const externalSkills = Array.isArray(options?.externalSkills)
+    ? options.externalSkills
+    : []
 
   return {
-    name,
-    ...metadata,
-    prompt: raw.slice(match[0].length).trim(),
+    async config(config) {
+      // ── Register agents ──────────────────────────────────────────────────
+
+      for (const file of readdirSync(agentsDir)) {
+        if (!file.endsWith(".md")) continue
+
+        const raw = readFileSync(
+          join(agentsDir, file),
+          "utf8",
+        )
+
+        const fm = raw.match(
+          /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/,
+        )
+
+        if (!fm) continue
+
+        const meta = parseYaml(
+          fm[1].split(/\r?\n/),
+        )
+
+        const name =
+          typeof meta.name === "string" && meta.name
+            ? meta.name
+            : file.replace(/\.md$/, "")
+
+        delete meta.name
+
+        config.agent = {
+          ...(config.agent || {}),
+          [name]: {
+            ...meta,
+            prompt: raw.slice(fm[0].length).trim(),
+          },
+        }
+      }
+
+      // ── Register external skills ─────────────────────────────────────────
+
+      config.skills = config.skills ?? {}
+
+      const paths = Array.isArray(config.skills.paths)
+        ? config.skills.paths
+        : []
+
+      if (externalSkills.length) {
+        const cacheRoot = join(
+          homedir(),
+          ".cache",
+          "opencode",
+          "packages",
+        )
+
+        if (!existsSync(cacheRoot)) {
+          mkdirSync(cacheRoot, {
+            recursive: true,
+          })
+        }
+
+        for (const ext of externalSkills) {
+          if (!ext?.name || !ext?.url) continue
+
+          const ref = ext.ref || "main"
+          const skillsPath = ext.skillsPath || "skills"
+
+          const cacheDir = join(
+            cacheRoot,
+            ext.name,
+          )
+
+          try {
+            // First run: clone the external repository.
+            if (!existsSync(cacheDir)) {
+              console.log(
+                `[my-agents] cloning ${ext.name} …`,
+              )
+
+              await execAsync(
+                `git clone --depth 1 --branch "${ref}" "${ext.url}" "${cacheDir}"`,
+                {
+                  timeout: 60_000,
+                },
+              )
+            }
+
+            const extSkills = join(
+              cacheDir,
+              skillsPath,
+            )
+
+            if (
+              existsSync(extSkills) &&
+              !paths.includes(extSkills)
+            ) {
+              paths.push(extSkills)
+
+              console.log(
+                `[my-agents] registered skills: ${ext.name}`,
+              )
+            }
+          } catch (err) {
+            console.error(
+              `[my-agents] failed to clone ${ext.name}:`,
+              err?.message || err,
+            )
+          }
+        }
+      }
+
+      config.skills.paths = paths
+    },
   }
 }
-
-/**
- * OpenCode 1.18.x plugin.
- *
- * The config hook receives the live merged configuration.
- * My-Agents injects the agents from this package into config.agent.
- *
- * This is intentionally different from ctx.agent.transform():
- * the transform API is not the mechanism OpenCode 1.18.x uses
- * to introduce arbitrary new agent definitions.
- */
-export const server = async () => ({
-  config: async (config: any) => {
-    const agentsDir = join(
-      fileURLToPath(new URL(".", import.meta.url)),
-      "..",
-      "agents",
-    )
-
-    const agents: Record<string, Record<string, unknown>> = {}
-
-    for (const file of readdirSync(agentsDir).sort()) {
-      if (!file.endsWith(".md")) {
-        continue
-      }
-
-      const agent = readAgent(join(agentsDir, file))
-
-      if (!agent) {
-        continue
-      }
-
-      const { name, ...definition } = agent
-
-      agents[name] = definition
-    }
-
-    /*
-     * My-Agents provides the defaults.
-     *
-     * Existing user/project configuration wins over the
-     * repository defaults.
-     */
-    config.agent = {
-      ...agents,
-      ...(config.agent ?? {}),
-    }
-
-    /*
-     * Master is the default only when the user has not
-     * explicitly selected another default agent.
-     */
-    if (!config.default_agent) {
-      config.default_agent = "master"
-    }
-
-    console.log(
-      `[my-agents] loaded ${Object.keys(agents).length} agents from ${agentsDir}`,
-    )
-  },
-})
-
-export default server
