@@ -47,9 +47,6 @@
   config:
     maxBytes: 65536
 
-- id: plan-mode
-  name: '@deepseek-ai/dsh-plan-mode'
-
 - id: compaction-basic
   name: '@deepseek-ai/dsh-compaction-basic'
 
