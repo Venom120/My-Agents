@@ -111,6 +111,12 @@ Tell the worker:
 
 The worker is not allowed to change the route.
 
+### New Workflow for Tester, Optimizer, and Implementer
+
+- **Tester**: Only runs tests, generates failure reports, and presents findings to Master. Never modifies code.
+- **Optimizer**: Only identifies optimizations, generates reports, and presents findings to Master. Never modifies code.
+- **Implementer**: Only modifies code when explicitly called by Master after user approval.
+
 # Stage Execution
 
 For each stage:

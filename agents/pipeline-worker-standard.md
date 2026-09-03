@@ -47,6 +47,12 @@ The canonical stages are:
 
 The stage-specific instructions are defined by the existing canonical agent files in this repository.
 
+### New Workflow for Tester, Optimizer, and Implementer
+
+- **Tester**: Only runs tests, generates failure reports, and presents findings to Master. Never modifies code.
+- **Optimizer**: Only identifies optimizations, generates reports, and presents findings to Master. Never modifies code.
+- **Implementer**: Only modifies code when explicitly called by Master after user approval.
+
 Follow the relevant stage definition rather than duplicating or inventing a new role definition.
 
 ## Inputs

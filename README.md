@@ -55,6 +55,37 @@ pipeline-worker-vision
 The route workers are not additional pipeline stages. They are six fixed
 execution-model variants that execute the currently assigned stage.
 
+### Strict Separation of Duties
+
+The pipeline enforces a **strict separation of duties** to ensure safe
+collaboration between stages and predictable user control:
+
+| Stage | Role | Modifies code? |
+|---|---|---|
+| **Researcher** | Read-only investigation and scoping. | ❌ No |
+| **Designer** | Read-only design and planning. | ❌ No |
+| **Implementer** | **Only stage** that modifies code or project files. | ✅ Yes |
+| **Optimizer** | Read-only analysis that produces an optimization report. | ❌ No |
+| **Tester** | Read-only; runs commands and produces a failure report. | ❌ No |
+| **Reviewer** | Read-only validation of the final result. | ❌ No |
+
+Key rules:
+
+- **Tester** never modifies code. If a test fails, the Tester writes a
+  diagnostic report and stops. The Master then presents the report to the
+  user, waits for approval, and only then calls the **Implementer** to
+  fix the issue. After the fix, the Tester is re-invoked to verify.
+- **Optimizer** never modifies code. If it identifies an optimization,
+  it writes a report and stops. The Master presents the proposal to the
+  user, waits for approval, and only then calls the **Implementer** to
+  apply the change. After the change, the Optimizer is re-invoked to
+  verify the improvement.
+- **Implementer** is the only stage that may modify code or project
+  files, and it does so only after the Master has presented a plan to
+  the user and received explicit approval.
+- The **Master** orchestrates sub-branches (fix / optimization) and only
+  resumes the parent pipeline once a sub-branch is complete and verified.
+
 ## Routes
 
 | Route | OmniRoute combo | Worker |

@@ -62,3 +62,33 @@ and the DeepSeek Harness preset integration.
 14. Do not add obsolete routing logic, fixed provider lists, or direct model
     assignments to the agent definitions. OmniRoute's configured combos are the
     source of truth for actual provider/model routing.
+
+15. **Strict separation of duties** between pipeline stages:
+
+    - **Tester** is **report-only**. It only runs test commands, captures
+      failures, and writes a diagnostic report. It **never modifies code**.
+      If a test fails, the Tester presents findings to the Master and stops.
+
+    - **Optimizer** is **report-only**. It only analyzes code/configuration
+      and writes an optimization report describing what could be improved.
+      It **never modifies code**. If it identifies optimizations, it
+      presents findings to the Master and stops.
+
+    - **Master** orchestrates sub-branches when Tester or Optimizer report
+      issues. It pauses the parent pipeline, presents the findings and a
+      proposed fix/optimization plan to the user, and waits for explicit
+      user approval before invoking the Implementer.
+
+    - **Implementer** is the **only** stage that modifies code or project
+      files. It executes exactly the changes approved by the Master after
+      user approval. It does not decide *what* to fix or optimize — only
+      *how* to apply the approved change.
+
+    - After the Implementer finishes a fix or optimization branch, the
+      Master **re-invokes the Tester or Optimizer** to verify the change
+      before resuming the parent pipeline. This forms a verifiable
+      sub-branch that the user must approve entry into and exit from.
+
+16. No automated tool, worker, or subagent may modify code outside the
+    Implementer stage. The Tester, Optimizer, Designer, and Researcher
+    stages all operate read-only against the codebase.
