@@ -152,9 +152,9 @@ The template ensures subagents receive complete context for their tasks.
 Use:
 
 ```text
-.opencode/agent-files/<stage>/PLAN.md
-.opencode/agent-files/<stage>/TODO.md
-.opencode/agent-files/<stage>/REPORT.md
+.agents/agent-files/<stage>/PLAN.md
+.agents/agent-files/<stage>/TODO.md
+.agents/agent-files/<stage>/REPORT.md
 ```
 
 Preserve existing repository conventions where they already exist.

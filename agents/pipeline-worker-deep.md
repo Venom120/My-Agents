@@ -84,9 +84,9 @@ If the current route appears unsuitable, report the issue to the Master instead 
 Use the repository's established artifact structure:
 
 ```text
-.opencode/agent-files/<stage>/PLAN.md
-.opencode/agent-files/<stage>/TODO.md
-.opencode/agent-files/<stage>/REPORT.md
+.agents/agent-files/<stage>/PLAN.md
+.agents/agent-files/<stage>/TODO.md
+.agents/agent-files/<stage>/REPORT.md
 ```
 
 Maintain these artifacts when the assigned stage requires them.

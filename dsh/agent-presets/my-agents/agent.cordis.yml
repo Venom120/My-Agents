@@ -125,9 +125,9 @@
       - A worker must use the shared stage artifacts and leave a report.
 
       Shared artifacts:
-      .opencode/agent-files/<stage>/PLAN.md
-      .opencode/agent-files/<stage>/TODO.md
-      .opencode/agent-files/<stage>/REPORT.md
+      .agents/agent-files/<stage>/PLAN.md
+      .agents/agent-files/<stage>/TODO.md
+      .agents/agent-files/<stage>/REPORT.md
 
       Stage handoff:
       - Read the previous stage's REPORT.md before starting the next stage.

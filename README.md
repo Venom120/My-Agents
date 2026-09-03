@@ -122,5 +122,5 @@ dsh/
         └── preset.yml
 ```
 
-`AGENTS.md`, project instructions, and project `.opencode/agent-files/`
+`AGENTS.md`, project instructions, and project `.agents/agent-files/`
 artifacts remain project-level concerns and are not bundled here.

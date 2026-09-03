@@ -1,0 +1,2 @@
+1. Read each of the 10 files to confirm the exact new_string content for each replacement.
+2. Verify the folder move by checking the existence of `.agents/agent-files/` and the absence of `.opencode/agent-files/`.

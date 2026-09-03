@@ -51,7 +51,7 @@ and the DeepSeek Harness preset integration.
     because this repository is installed globally.
 
 12. Pipeline workspaces, when used, belong under
-    `.opencode/agent-files/<agent>/`. Handoff artifacts should use the standard
+    `.agents/agent-files/<agent>/`. Handoff artifacts should use the standard
     `REPORT.md` filename so the next stage can consume them consistently.
 
 13. **Prefer tools over shell.** When editing or writing files, use the
