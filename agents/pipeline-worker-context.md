@@ -72,7 +72,7 @@ Do not:
 
 - select another model
 - select another route
-- invoke model-router
+- invoke OmniRoute routing
 - invoke another pipeline worker
 - invoke another subagent
 - create a competing workflow

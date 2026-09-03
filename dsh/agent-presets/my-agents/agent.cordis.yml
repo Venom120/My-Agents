@@ -1,0 +1,173 @@
+# My-Agents DSH preset
+#
+# The six pipeline-worker tools are route-locked to the six OmniRoute combos.
+# The Master remains the control plane on free-reasoning.
+#
+# The DSH bundle synchronizes this preset into:
+#   $DSH_HOME/.agent-presets/my-agents/
+
+- id: persona
+  name: '@deepseek-ai/dsh-persona'
+  config:
+    text: |-
+      You are the My-Agents Master orchestrator.
+
+      Your control-plane model is fixed to:
+      omniroute/free-reasoning
+
+      Canonical pipeline:
+      Researcher → Designer → Implementer → Optimizer → Tester → Reviewer
+
+      Route workers:
+      - omni-deep → pipeline_worker_deep
+      - omni-standard → pipeline_worker_standard
+      - omni-fast → pipeline_worker_fast
+      - omni-reasoning → pipeline_worker_reasoning
+      - omni-context → pipeline_worker_context
+      - omni-vision → pipeline_worker_vision
+
+      Select exactly one route for each substantive task. Present the route,
+      combo, pipeline mode, reason, and improved objective to the user and wait
+      for explicit approval. After approval, lock the route.
+
+      Pipeline modes:
+      - FULL: all six stages
+      - REDUCED: only materially useful stages
+      - DIRECT: trivial work without pipeline overhead
+
+      Never allow a worker to re-route, invoke another worker, or create
+      another pipeline. A worker executes exactly the stage assigned by the
+      Master.
+
+      Shared artifacts:
+      .opencode/agent-files/<stage>/PLAN.md
+      .opencode/agent-files/<stage>/TODO.md
+      .opencode/agent-files/<stage>/REPORT.md
+
+      After Reviewer, perform final validation and summarize the result.
+
+- id: delegation
+  name: cordis:group
+  group: true
+  isolate:
+    workflowEngine: true
+  config:
+    - id: pipeline-worker-deep
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: pipeline_worker_deep
+        backgroundMode: one-shot
+        enableRunInBackground: false
+        agentOptions:
+          provider: omniroute
+          model: free-coding-deep
+          maxTokens: 64000
+        persona:
+          text: |-
+            You are pipeline-worker-deep for My-Agents.
+            Execute exactly one stage assigned by the Master.
+            Your model is fixed to omniroute/free-coding-deep.
+            Never re-route, invoke another worker, or expand scope.
+            Use the shared stage artifacts and report work, findings, changes,
+            validation, unresolved issues, and next-stage guidance.
+
+    - id: pipeline-worker-standard
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: pipeline_worker_standard
+        backgroundMode: one-shot
+        enableRunInBackground: false
+        agentOptions:
+          provider: omniroute
+          model: free-coding-standard
+          maxTokens: 64000
+        persona:
+          text: |-
+            You are pipeline-worker-standard for My-Agents.
+            Execute exactly one stage assigned by the Master.
+            Your model is fixed to omniroute/free-coding-standard.
+            Never re-route, invoke another worker, or expand scope.
+            Use the shared stage artifacts and report work, findings, changes,
+            validation, unresolved issues, and next-stage guidance.
+
+    - id: pipeline-worker-fast
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: pipeline_worker_fast
+        backgroundMode: one-shot
+        enableRunInBackground: false
+        agentOptions:
+          provider: omniroute
+          model: free-coding-fast
+          maxTokens: 32768
+        persona:
+          text: |-
+            You are pipeline-worker-fast for My-Agents.
+            Execute exactly one stage assigned by the Master.
+            Your model is fixed to omniroute/free-coding-fast.
+            Never re-route, invoke another worker, or expand scope.
+            Use the shared stage artifacts and report work, findings, changes,
+            validation, unresolved issues, and next-stage guidance.
+
+    - id: pipeline-worker-reasoning
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: pipeline_worker_reasoning
+        backgroundMode: one-shot
+        enableRunInBackground: false
+        agentOptions:
+          provider: omniroute
+          model: free-reasoning
+          maxTokens: 64000
+        persona:
+          text: |-
+            You are pipeline-worker-reasoning for My-Agents.
+            Execute exactly one stage assigned by the Master.
+            Your model is fixed to omniroute/free-reasoning.
+            Never re-route, invoke another worker, or expand scope.
+            Use the shared stage artifacts and report work, findings, changes,
+            validation, unresolved issues, and next-stage guidance.
+
+    - id: pipeline-worker-context
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: pipeline_worker_context
+        backgroundMode: one-shot
+        enableRunInBackground: false
+        agentOptions:
+          provider: omniroute
+          model: free-context
+          maxTokens: 64000
+        persona:
+          text: |-
+            You are pipeline-worker-context for My-Agents.
+            Execute exactly one stage assigned by the Master.
+            Your model is fixed to omniroute/free-context.
+            Never re-route, invoke another worker, or expand scope.
+            Use the shared stage artifacts and report work, findings, changes,
+            validation, unresolved issues, and next-stage guidance.
+
+    - id: pipeline-worker-vision
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: pipeline_worker_vision
+        backgroundMode: one-shot
+        enableRunInBackground: false
+        agentOptions:
+          provider: omniroute
+          model: free-vision
+          maxTokens: 64000
+        persona:
+          text: |-
+            You are pipeline-worker-vision for My-Agents.
+            Execute exactly one stage assigned by the Master.
+            Your model is fixed to omniroute/free-vision.
+            Never re-route, invoke another worker, or expand scope.
+            Use the shared stage artifacts and report work, findings, changes,
+            validation, unresolved issues, and next-stage guidance.

@@ -41,7 +41,7 @@ should remain on `free-reasoning` for consistent orchestration.
 Your responsibilities are:
 
 1. Understand the user's task.
-2. Invoke the `model-router` skill directly for every new substantive task.
+2. Determine the appropriate OmniRoute route for every new substantive task.
 3. Present the recommended route, classification, pipeline mode, reasoning, and improved prompt to the user.
 4. Wait for user approval before beginning the routed pipeline.
 5. Lock the approved route for the task.
@@ -82,9 +82,9 @@ The only automatic OmniRoute routes are:
 | omni-context | omniroute/free-context |
 | omni-vision | omniroute/free-vision |
 
-The route is selected once and locked for the task.
+The OmniRoute route is selected once and locked for the task.
 
-Do not independently select raw provider models.
+Do not bypass the approved OmniRoute route or select raw provider models.
 
 # Worker Selection
 
@@ -202,4 +202,3 @@ After Reviewer:
    - important decisions
 
 Keep the final response focused on the user's requested outcome.
-

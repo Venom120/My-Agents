@@ -1,97 +1,47 @@
-# OpenCode + OmniRoute Agent Pipeline
+# My-Agents
 
-## Purpose
+My-Agents is the shared agent architecture for OpenCode and DeepSeek Harness
+using OmniRoute as the model routing layer.
 
-This repository defines a free-only OpenCode coding-agent system built around OmniRoute Engine Combos and a structured multi-stage pipeline.
+## Architecture
 
-The design separates four responsibilities:
-
-1. **Master** — owns the user task, approval gates, pipeline orchestration, and final result. It is fixed to `omniroute/free-reasoning`.
-2. **Model Router** — classifies the task and recommends one OmniRoute Engine Combo.
-3. **Pipeline Workers** — execute the individual pipeline stages while remaining pinned to the approved combo.
-4. **OmniRoute** — performs the actual provider/model routing, retries, cooldowns, resilience, and compression.
-
-The Master remains fixed on `omniroute/free-reasoning` as the control plane. The
-selected task route is used by the pipeline workers as the execution plane.
-
-The model route is selected once for a user task and is then locked for the pipeline unless the Master explicitly changes it.
-
----
+```text
+User
+  ↓
+Master
+  ↓
+Route Selection
+  ↓
+User Approval
+  ↓
+Route Lock
+  ↓
+Pipeline Worker
+  ↓
+OmniRoute
+  ↓
+Provider / Model Pool
+```
 
 ## Pipeline
 
-The standard pipeline is:
+There are **six canonical pipeline stages**:
 
 ```text
-User Task
-   │
-   ▼
-Master
-   │
-   ▼
-Model Router
-   │
-   ├── route recommendation
-   ├── task classification
-   ├── improved task prompt
-   └── pipeline mode
-   │
-   ▼
-User Approval
-   │
-   ▼
-Route Lock
-   │
-   ├── Researcher
-   ├── Designer
-   ├── Implementer
-   ├── Optimizer
-   ├── Tester
-   └── Reviewer
-   │
-   ▼
-Master Final Review
+Researcher
+    ↓
+Designer
+    ↓
+Implementer
+    ↓
+Optimizer
+    ↓
+Tester
+    ↓
+Reviewer
 ```
 
-For simple tasks, the router may recommend `REDUCED` or `DIRECT` execution instead of the full pipeline.
-
----
-
-## OmniRoute Routes
-
-The six approved automatic routes are:
-
-| Route | OmniRoute Combo | Intended Use |
-|---|---|---|
-| `omni-deep` | `free-coding-deep` | difficult implementation, architecture, complex debugging |
-| `omni-standard` | `free-coding-standard` | normal coding and implementation |
-| `omni-fast` | `free-coding-fast` | lightweight edits, simple tasks, quick iteration |
-| `omni-reasoning` | `free-reasoning` | difficult reasoning, diagnosis, planning |
-| `omni-context` | `free-context` | large-context analysis, repository-wide understanding |
-| `omni-vision` | `free-vision` | image/UI/screenshot/visual tasks |
-
-The existing `ClaudeCode-Stack` combo is not used by this automatic pipeline.
-
----
-
-## Route Selection
-
-The router uses this priority:
-
-1. Visual/image/UI requirement → `omni-vision`
-2. Large-context/repository-wide requirement → `omni-context`
-3. Reasoning-heavy diagnosis/planning → `omni-reasoning`
-4. Complex/deep coding → `omni-deep`
-5. Normal coding → `omni-standard`
-6. Lightweight/simple task → `omni-fast`
-
-The router recommends a route; it does not execute the task.
-
----
-
-## Pipeline Workers
-
-Six hidden workers correspond to the six routes:
+There are **six route workers**:
 
 ```text
 pipeline-worker-deep
@@ -102,136 +52,75 @@ pipeline-worker-context
 pipeline-worker-vision
 ```
 
-Each worker is pinned to exactly one OmniRoute combo.
+The route workers are not additional pipeline stages. They are six fixed
+execution-model variants that execute the currently assigned stage.
 
-The Master chooses the worker after the route has been approved and tells the worker which pipeline stage it is executing.
+## Routes
 
-Workers do not:
+| Route | OmniRoute combo | Worker |
+|---|---|---|
+| `omni-deep` | `free-coding-deep` | `pipeline-worker-deep` |
+| `omni-standard` | `free-coding-standard` | `pipeline-worker-standard` |
+| `omni-fast` | `free-coding-fast` | `pipeline-worker-fast` |
+| `omni-reasoning` | `free-reasoning` | `pipeline-worker-reasoning` |
+| `omni-context` | `free-context` | `pipeline-worker-context` |
+| `omni-vision` | `free-vision` | `pipeline-worker-vision` |
 
-- invoke other workers
-- invoke the model router
-- change their model
-- select another route
-- bypass the Master
-- create an independent pipeline
+The Master is fixed to `omniroute/free-reasoning`.
 
-Workers follow the canonical stage definitions already present in the repository.
+## OpenCode
 
----
-
-## Stage Responsibilities
-
-### Researcher
-
-Investigates the problem, existing implementation, relevant documentation, constraints, and risks.
-
-### Designer
-
-Turns research into an implementation design, architecture, interfaces, and concrete execution plan.
-
-### Implementer
-
-Makes the required code/configuration changes according to the approved design.
-
-### Optimizer
-
-Reviews the implementation for correctness, simplicity, performance, maintainability, and unnecessary complexity.
-
-### Tester
-
-Validates the result through appropriate tests, commands, static checks, and targeted verification.
-
-### Reviewer
-
-Performs the final technical review and reports remaining issues, regressions, or release blockers.
-
----
-
-## Shared Stage Artifacts
-
-Pipeline work is recorded under:
+The package entry point is:
 
 ```text
-.opencode/agent-files/<stage>/
+plugin/load-agents.ts
 ```
 
-Typical files:
+It loads the Markdown agents and preserves the existing skill-loading and
+external-skill-repository support.
+
+The ZIP intentionally contains no `skills/` directory.
+
+## DeepSeek Harness
+
+The same repository is a DSH bundle. Its DSH preset is stored in:
 
 ```text
-PLAN.md
-TODO.md
-REPORT.md
+dsh/agent-presets/my-agents/
 ```
 
-Each stage should leave enough information for the next stage to understand what was done and what remains.
-
----
-
-## Route Lock
-
-The route is selected once for the user task.
-
-Example:
+The bundle synchronizes it into:
 
 ```text
-User task
-   ↓
-model-router
-   ↓
-omni-deep
-   ↓
-APPROVED
-   ↓
-route locked
-   ↓
-Researcher → Designer → Implementer → Optimizer → Tester → Reviewer
+$DSH_HOME/.agent-presets/my-agents/
 ```
 
-The pipeline should not independently re-route every stage. This keeps the execution consistent and prevents the route from changing unexpectedly in the middle of a task.
+so the installed user preset is generated/updated from this repository.
 
-A new routing decision may be made only when the Master explicitly determines that the task requirements have materially changed.
-
----
-
-## Approval Gates
-
-The Master must obtain user approval before executing the selected route.
-
-The Master may also pause for approval when:
-
-- the task scope materially changes
-- a destructive or risky operation is required
-- an important architectural decision is ambiguous
-- the pipeline discovers a requirement that conflicts with the original task
-
-Routine stage-to-stage execution should not require unnecessary approval.
-
----
-
-## Configuration Target
-
-This repository targets the user's installed OpenCode configuration style and should not blindly migrate configuration syntax to a newer OpenCode generation.
-
-The OpenCode agent definitions therefore remain compatible with the installed setup unless a deliberate migration is requested.
-
----
-
-## Design Principle
-
-The important separation is:
+## Files
 
 ```text
-Master
-  = orchestration + approvals
+agents/
+├── master.md
+├── pipeline-worker-deep.md
+├── pipeline-worker-standard.md
+├── pipeline-worker-fast.md
+├── pipeline-worker-reasoning.md
+├── pipeline-worker-context.md
+├── pipeline-worker-vision.md
+└── subagent-prompt-template.md
 
-Model Router
-  = classification + route recommendation
+plugin/
+└── load-agents.ts
 
-Pipeline Worker
-  = stage execution
-
-OmniRoute
-  = provider/model routing + resilience
+dsh/
+├── cordis.patch.yml
+├── sync-preset.js
+└── agent-presets/
+    └── my-agents/
+        ├── agent.cordis.yml
+        └── preset.yml
 ```
 
-No layer should silently take over the responsibilities of another layer.
+`AGENTS.md`, project instructions, and project `.opencode/agent-files/`
+artifacts remain project-level concerns and are not bundled here.
