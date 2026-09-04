@@ -1,6 +1,6 @@
 # /etc/systemd/system/omniroute.service
 [Unit]
-Description=OmniRoute AI Gateway
+Description=OmniRoute
 After=network-online.target
 Wants=network-online.target
 
@@ -17,7 +17,7 @@ Environment=BASH_ENV=/root/.bashrc
 
 # Start through Bash so the service gets the same environment
 # as other services using .bashrc.
-ExecStart=/bin/bash -c 'exec /usr/bin/env omniroute'
+ExecStart=/bin/bash -c 'exec /usr/bin/env omniroute --no-open'
 
 Restart=on-failure
 RestartSec=5

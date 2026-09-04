@@ -11,7 +11,7 @@
   },
   "exports": {
     ".": "./index.js",
-    "./opencode": "./plugin/load-agents.ts",
+    "./opencode": "./plugin/load-agents.js",
     "./dsh-sync": "./dsh/sync-preset.js"
   },
   "engines": {
