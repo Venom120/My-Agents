@@ -100,7 +100,19 @@ export default async function (_input, options) {
     "..",
   )
 
+  // The plugin only ever reads from `agents/`. The `setup/`,
+  // `dsh/`, `docs/` and any other top-level directories are
+  // intentionally NOT walked by this loader, so they are not
+  // copied into OpenCode's package cache and do not pollute the
+  // runtime. If you ever need to load more paths, do it here
+  // explicitly — never walk the whole repoRoot.
   const agentsDir = join(repoRoot, "agents")
+
+  // Hard guard: refuse to walk directories that are not the
+  // canonical agent directory. This is defensive; the loop below
+  // only iterates `agentsDir`, but if a future refactor adds a
+  // generic `readdirSync(repoRoot)` it will fail here first.
+  const allowedRoots = new Set([agentsDir])
 
   // externalSkills comes from the second element of the plugin tuple:
   //
@@ -117,6 +129,16 @@ export default async function (_input, options) {
       // ── Register agents ──────────────────────────────────────────────────
 
       for (const file of readdirSync(agentsDir)) {
+        // Defensive check: the agentsDir loop is already the only
+        // place we read files from, but if `allowedRoots` is ever
+        // extended we want to fail loudly here before a wrong
+        // directory is read.
+        if (!allowedRoots.has(agentsDir)) {
+          throw new Error(
+            `[my-agents] refusing to walk non-agent directory: ${agentsDir}`,
+          )
+        }
+
         if (!file.endsWith(".md")) continue
 
         const raw = readFileSync(

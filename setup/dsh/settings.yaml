@@ -1,0 +1,59 @@
+ui-onboarding:
+  welcomeNoticeVersion: 2026-08-13.1
+agent-presets:
+  default: my-agents
+llm-pi-ai:
+  providers:
+    {
+      omniroute:
+        {
+          displayName: OmniRoute,
+          apiKeyEnv: OMNIROUTE_API_KEY,
+          api: openai-completions,
+          baseURL: http://127.0.0.1:20128/v1,
+          models:
+            [
+              {
+                  id: free-coding-deep,
+                  contextWindow: 131072,
+                  maxTokens: 64000,
+                  name: OmniRoute — Deep Coding
+                },
+              {
+                  id: free-coding-standard,
+                  contextWindow: 131072,
+                  maxTokens: 64000,
+                  name: OmniRoute — Standard Coding
+                },
+              {
+                  id: free-coding-fast,
+                  contextWindow: 65536,
+                  maxTokens: 32768,
+                  name: OmniRoute — Fast Coding
+                },
+              {
+                  id: free-reasoning,
+                  contextWindow: 131072,
+                  maxTokens: 64000,
+                  name: OmniRoute — Reasoning
+                },
+              {
+                  id: free-context,
+                  contextWindow: 200000,
+                  maxTokens: 64000,
+                  name: OmniRoute — Large Context
+                },
+              {
+                  id: free-vision,
+                  contextWindow: 200000,
+                  maxTokens: 64000,
+                  name: OmniRoute — Vision
+                }
+            ]
+        }
+    }
+ui-theme:
+  preference: dark
+agent-default-model:
+  provider: omniroute
+  model: free-reasoning

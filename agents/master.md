@@ -155,13 +155,34 @@ The template ensures subagents receive complete context for their tasks.
 
 # Shared Artifacts
 
-Use:
+**STRICT FILE LOCATION RULES — ENFORCE ON EVERY WORKER:**
+
+Workers MUST write all stage artifacts at:
 
 ```text
-.agents/agent-files/<stage>/PLAN.md
-.agents/agent-files/<stage>/TODO.md
-.agents/agent-files/<stage>/REPORT.md
+<project-root>/.agents/agent-files/<stage>/PLAN.md
+<project-root>/.agents/agent-files/<stage>/TODO.md
+<project-root>/.agents/agent-files/<stage>/REPORT.md
 ```
+
+Where `<project-root>` is the directory that contains the `.agents/`
+folder, the `AGENTS.md` file, or the `package.json` (whichever is found
+first when walking up from the current working directory).
+
+**When you spawn a worker you MUST pass:**
+
+1. The **absolute project root path** explicitly in the prompt.
+2. An explicit instruction: *"Write all artifacts under
+   `<absolute-project-root>/.agents/agent-files/<stage>/`. Never write
+   report files in the current shell directory. Use the exact filenames
+   `PLAN.md`, `TODO.md`, `REPORT.md` (uppercase). Create the directory
+   with `mkdir -p` if it does not exist."*
+3. A reminder that paths must use forward slashes and be relative to
+   the project root, not the current shell working directory.
+
+If a worker reports that it created a file outside
+`<project-root>/.agents/agent-files/`, reject the report and instruct
+the worker to relocate the file before continuing.
 
 Preserve existing repository conventions where they already exist.
 

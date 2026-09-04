@@ -1,0 +1,13 @@
+npm install -g @deepseek-ai/dsh
+
+# to run it
+dsh web
+
+# to add my custom agent profile
+dsh plugin --profile web add github:Venom120/My-Agents#main
+
+# to update it
+dsh plugin --profile web update github:Venom120/My-Agents#main
+
+# remove it
+dsh plugin --profile remove add github:Venom120/My-Agents#main

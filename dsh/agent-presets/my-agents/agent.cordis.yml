@@ -132,6 +132,15 @@
       - After the Implementer finishes a fix or optimization branch, the Master re-invokes the Tester or Optimizer to verify the change before resuming the parent pipeline. This forms a verifiable sub-branch that the user must approve entry into and exit from.
       
       No automated tool, worker, or subagent may modify code outside the Implementer stage. The Tester, Optimizer, Designer, and Researcher stages all operate read-only against the codebase.
+
+      STRICT FILE LOCATION RULES — ENFORCE ON EVERY WORKER:
+      Workers MUST write all stage artifacts at:
+        <project-root>/.agents/agent-files/<stage>/PLAN.md
+        <project-root>/.agents/agent-files/<stage>/TODO.md
+        <project-root>/.agents/agent-files/<stage>/REPORT.md
+      Where <project-root> is the directory that contains the .agents/ folder, the AGENTS.md file, or the package.json.
+      Never write report files in the current shell directory. Use the exact filenames PLAN.md, TODO.md, REPORT.md (uppercase). Use forward slashes in paths. Create the directory with mkdir -p if it does not exist.
+      The Master must pass the absolute project root path to every worker and reject any report that places artifacts outside the project root.
       
       Shared artifacts:
       .agents/agent-files/<stage>/PLAN.md
@@ -185,6 +194,14 @@
           
           No automated tool, worker, or subagent may modify code outside the Implementer stage. The Tester, Optimizer, Designer, and Researcher stages all operate read-only against the codebase.
 
+          STRICT FILE LOCATION RULES:
+          Write all stage artifacts at <project-root>/.agents/agent-files/<stage>/PLAN.md, TODO.md, REPORT.md.
+          Never write report files in the current shell directory (e.g. /mnt/e/Optivators/Backend/).
+          Use the exact filenames PLAN.md, TODO.md, REPORT.md (uppercase). Use forward slashes in paths.
+          Create the directory with mkdir -p .agents/agent-files/<stage> if it does not exist.
+          If you are unsure of the project root, detect it by looking for .agents/, AGENTS.md, or package.json.
+          The Master will provide the absolute project root path in the prompt. Use it.
+
     - id: pipeline-worker-standard
       name: '@deepseek-ai/dsh-tool-subagent'
       config:
@@ -215,6 +232,14 @@
           - After the Implementer finishes a fix or optimization branch, the Master re-invokes the Tester or Optimizer to verify the change before resuming the parent pipeline. This forms a verifiable sub-branch that the user must approve entry into and exit from.
           
           No automated tool, worker, or subagent may modify code outside the Implementer stage. The Tester, Optimizer, Designer, and Researcher stages all operate read-only against the codebase.
+
+          STRICT FILE LOCATION RULES:
+          Write all stage artifacts at <project-root>/.agents/agent-files/<stage>/PLAN.md, TODO.md, REPORT.md.
+          Never write report files in the current shell directory (e.g. /mnt/e/Optivators/Backend/).
+          Use the exact filenames PLAN.md, TODO.md, REPORT.md (uppercase). Use forward slashes in paths.
+          Create the directory with mkdir -p .agents/agent-files/<stage> if it does not exist.
+          If you are unsure of the project root, detect it by looking for .agents/, AGENTS.md, or package.json.
+          The Master will provide the absolute project root path in the prompt. Use it.
 
     - id: pipeline-worker-fast
       name: '@deepseek-ai/dsh-tool-subagent'
@@ -247,6 +272,14 @@
           
           No automated tool, worker, or subagent may modify code outside the Implementer stage. The Tester, Optimizer, Designer, and Researcher stages all operate read-only against the codebase.
 
+          STRICT FILE LOCATION RULES:
+          Write all stage artifacts at <project-root>/.agents/agent-files/<stage>/PLAN.md, TODO.md, REPORT.md.
+          Never write report files in the current shell directory (e.g. /mnt/e/Optivators/Backend/).
+          Use the exact filenames PLAN.md, TODO.md, REPORT.md (uppercase). Use forward slashes in paths.
+          Create the directory with mkdir -p .agents/agent-files/<stage> if it does not exist.
+          If you are unsure of the project root, detect it by looking for .agents/, AGENTS.md, or package.json.
+          The Master will provide the absolute project root path in the prompt. Use it.
+
     - id: pipeline-worker-reasoning
       name: '@deepseek-ai/dsh-tool-subagent'
       config:
@@ -277,6 +310,14 @@
           - After the Implementer finishes a fix or optimization branch, the Master re-invokes the Tester or Optimizer to verify the change before resuming the parent pipeline. This forms a verifiable sub-branch that the user must approve entry into and exit from.
           
           No automated tool, worker, or subagent may modify code outside the Implementer stage. The Tester, Optimizer, Designer, and Researcher stages all operate read-only against the codebase.
+
+          STRICT FILE LOCATION RULES:
+          Write all stage artifacts at <project-root>/.agents/agent-files/<stage>/PLAN.md, TODO.md, REPORT.md.
+          Never write report files in the current shell directory (e.g. /mnt/e/Optivators/Backend/).
+          Use the exact filenames PLAN.md, TODO.md, REPORT.md (uppercase). Use forward slashes in paths.
+          Create the directory with mkdir -p .agents/agent-files/<stage> if it does not exist.
+          If you are unsure of the project root, detect it by looking for .agents/, AGENTS.md, or package.json.
+          The Master will provide the absolute project root path in the prompt. Use it.
 
     - id: pipeline-worker-context
       name: '@deepseek-ai/dsh-tool-subagent'
@@ -309,6 +350,14 @@
           
           No automated tool, worker, or subagent may modify code outside the Implementer stage. The Tester, Optimizer, Designer, and Researcher stages all operate read-only against the codebase.
 
+          STRICT FILE LOCATION RULES:
+          Write all stage artifacts at <project-root>/.agents/agent-files/<stage>/PLAN.md, TODO.md, REPORT.md.
+          Never write report files in the current shell directory (e.g. /mnt/e/Optivators/Backend/).
+          Use the exact filenames PLAN.md, TODO.md, REPORT.md (uppercase). Use forward slashes in paths.
+          Create the directory with mkdir -p .agents/agent-files/<stage> if it does not exist.
+          If you are unsure of the project root, detect it by looking for .agents/, AGENTS.md, or package.json.
+          The Master will provide the absolute project root path in the prompt. Use it.
+
     - id: pipeline-worker-vision
       name: '@deepseek-ai/dsh-tool-subagent'
       config:
@@ -339,6 +388,14 @@
           - After the Implementer finishes a fix or optimization branch, the Master re-invokes the Tester or Optimizer to verify the change before resuming the parent pipeline. This forms a verifiable sub-branch that the user must approve entry into and exit from.
           
           No automated tool, worker, or subagent may modify code outside the Implementer stage. The Tester, Optimizer, Designer, and Researcher stages all operate read-only against the codebase.
+
+          STRICT FILE LOCATION RULES:
+          Write all stage artifacts at <project-root>/.agents/agent-files/<stage>/PLAN.md, TODO.md, REPORT.md.
+          Never write report files in the current shell directory (e.g. /mnt/e/Optivators/Backend/).
+          Use the exact filenames PLAN.md, TODO.md, REPORT.md (uppercase). Use forward slashes in paths.
+          Create the directory with mkdir -p .agents/agent-files/<stage> if it does not exist.
+          If you are unsure of the project root, detect it by looking for .agents/, AGENTS.md, or package.json.
+          The Master will provide the absolute project root path in the prompt. Use it.
 
 # ── remaining model-facing tools ───────────────────────────────────────────
 
