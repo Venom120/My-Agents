@@ -200,3 +200,79 @@ you have:
 After all four are in place, double-click `start-omniroute.vbs` to
 launch the tray. The menu reflects reality; "Startup" toggles
 autostart; "Open" jumps to the web UI of each service.
+
+### Switching OpenCode profiles (My-Agents ↔ ECC)
+
+The My-Agents stack ships with a second profile for OpenCode:
+**ECC** (Elite Claude Code) — a 68-agent, 286-skill, 94-command
+swarm that runs alongside the My-Agents 6-stage pipeline. You
+switch between them from the tray:
+
+1. Right-click the tray icon → **OpenCode** → **Profile**.
+2. Click **My-Agents** or **ECC**.
+
+The tray:
+
+- Copies the chosen profile to `~/.config/opencode/opencode.jsonc`
+  inside WSL.
+- For **ECC**: automatically runs `npm install -g ecc-universal`
+  and `npm run build` if the package is missing or unbuilt.
+- Restarts `opencode.service` and waits up to 30 s for it to come
+  back up.
+- Updates the checkmark in the menu from a SHA-256 hash of the
+  active config (not a string match), so hand-edits are
+  detected and shown via an "Unknown active profile" state.
+
+Every step is logged to:
+
+```text
+%LOCALAPPDATA%\My-Agents\tray.log
+```
+
+The log is truncated to the last 5 MB on every tray launch. Error
+pop-ups offer to open the log in Notepad.
+
+The two profile templates are checked into the repo at
+[`opencode.my-agents.jsonc`](../opencode.my-agents.jsonc) and
+[`opencode.ecc.jsonc`](../opencode.ecc.jsonc) at the My-Agents
+repo root. They use the `.jsonc` extension (OpenCode's native format)
+and are copied to `profile.<name>.json` inside WSL when deployed. The tray prefers the on-disk templates and falls back
+to embedded copies if the repo is not at the expected
+`/mnt/d/Github/My-Agents` path.
+
+> **DSH profiles are NOT switched from the tray.** Use
+> `dsh plugin --profile web add` in a terminal. See
+> [`dsh/README.md`](dsh/README.md).
+
+### User-added plugins survive profile switches
+
+The tray does **not** blindly overwrite the live `opencode.jsonc` with
+the chosen template. It reads the live file, separates each entry in
+the `plugin` block into:
+
+- **Base** entries that match the target template's `plugin` block
+  (deep structural compare).
+- **User extras** — every other entry.
+
+It then writes a merged file: `targetBase + userExtras` for `plugin`,
+plus a merge of the `provider` block that keeps any non-template
+providers the user added. The previous live file is backed up to
+`opencode.jsonc.bak` first, so a hand-edit that the merge misreads can
+be recovered with `cp ~/.config/opencode/opencode.jsonc.bak
+~/.config/opencode/opencode.jsonc`.
+
+Practical effect: `opencode plugin add foo` while on the My-Agents
+profile → switch to ECC → switch back to My-Agents → `foo` is still
+in the active `opencode.jsonc`. Every preserved extra is logged to
+`%LOCALAPPDATA%\My-Agents\tray.log` as
+`merge: kept N user plugin(s): …`.
+
+Edge cases that are handled and logged:
+
+- The base of the live file drifted from the template (hand-edit
+  or a fork) — the user's version is kept and the status tick
+  shows "Unknown active profile" until the template is updated.
+- A `plugin` entry is malformed JSON — the tray aborts the switch
+  and shows the parse error.
+- The `opencode.jsonc.bak` write fails (read-only mount) — the
+  switch is aborted and the old live file is left in place.

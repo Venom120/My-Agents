@@ -31,7 +31,7 @@ swarm.
 | # | Decision | Choice |
 |---|---|---|
 | 1 | Where does ECC live? | **Git submodule** of this repo, pointing to the user's fork `Venom120/ECC`. |
-| 2 | How does OpenCode switch between profiles? | **Toggle.** Maintain two `opencode.json` files (`opencode.json` = My-Agents, `opencode.ecc.json` = ECC) and let the user / tray swap which one is active. |
+| 2 | How does OpenCode switch between profiles? | **Toggle.** Maintain two `opencode.jsonc` files (`opencode.jsonc` = My-Agents, `opencode.ecc.jsonc` = ECC) and let the user / tray swap which one is active. |
 | 3 | Where are the OmniRoute fallbacks changed? | **Inside ECC.** Update ECC's `agent.yaml` and the per-host config so its preferred model is `omniroute/free-reasoning` and the fallbacks are the six OmniRoute combos. Affects both OpenCode and DSH usage of ECC. |
 
 ---
@@ -102,16 +102,16 @@ fork, so they can later be PR'd upstream to `affaan-m/ECC`):
 ### Workstream C — OpenCode profile toggle
 
 Goal: A user can flip between My-Agents and ECC without editing
-`opencode.json` by hand.
+`opencode.jsonc` by hand.
 
 Approach:
 1. Keep two config files in the repo root (or in the user setup dir):
-   - `opencode.my-agents.json` — current `plugin:
+   - `opencode.my-agents.jsonc` — current `plugin:
      ["github:Venom120/My-Agents#main"]`
-   - `opencode.ecc.json` — `plugin: ["github:Venom120/ECC#main"]`
+   - `opencode.ecc.jsonc` — `plugin: ["github:Venom120/ECC#main"]`
 2. Add a small `scripts/switch-opencode-profile.{sh,ps1}` that
    symlinks or copies the chosen file to the active config location
-   (`~/.config/opencode/opencode.json` on Linux, `%APPDATA%\opencode\opencode.json` on Windows).
+   (`~/.config/opencode/opencode.jsonc` on Linux, `%APPDATA%\opencode\opencode.jsonc` on Windows).
 3. Optionally add a third item to the Windows tray
    (`setup/start-omniroute.vbs`) under a new "Profile" submenu
    that runs the switch script.

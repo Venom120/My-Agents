@@ -25,14 +25,24 @@ Set fso = CreateObject("Scripting.FileSystemObject")
 
 WSL_DISTRO = "ArchLinux"
 
+' ============================================================
+' DEBUG / PRODUCTION MODE
+'
+' False = normal silent tray operation.
+' True  = visible PowerShell + console diagnostics.
+' Logs are written in both modes.
+' ============================================================
+DEBUG_MODE = False
+
 ps = ""
 ps = ps & "Add-Type -AssemblyName System.Windows.Forms" & vbCrLf
 ps = ps & "Add-Type -AssemblyName System.Drawing" & vbCrLf
 ps = ps & "" & vbCrLf
 ps = ps & "$WSLDistro = '" & WSL_DISTRO & "'" & vbCrLf
 ps = ps & "$ErrorActionPreference = 'Continue'" & vbCrLf
+ps = ps & "$debugMode = " & LCase(CStr(DEBUG_MODE)) & vbCrLf
 ps = ps & "$debugLog = Join-Path $env:TEMP 'omniroute-tray-debug.log'" & vbCrLf
-ps = ps & "function Debug-Trace { param([string]$Message); $line = '[' + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss.fff') + '] ' + $Message; Write-Host $line; try { Add-Content -Path $debugLog -Value $line -ErrorAction SilentlyContinue } catch {} }" & vbCrLf
+ps = ps & "function Debug-Trace { param([string]$Message); $line = '[' + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss.fff') + '] ' + $Message; if ($debugMode) { Write-Host $line }; try { Add-Content -Path $debugLog -Value $line -ErrorAction SilentlyContinue } catch {} }" & vbCrLf
 ps = ps & "Debug-Trace 'PowerShell payload entered'" & vbCrLf
 ps = ps & "Debug-Trace ('WSL distro = ' + $WSLDistro)" & vbCrLf
 ps = ps & "" & vbCrLf
@@ -1422,21 +1432,36 @@ End If
 ' START POWERSHELL
 ' ============================================================
 
-WScript.Echo "DEBUG: temporary PowerShell script: " & psTempFile
-WScript.Echo "DEBUG: launching PowerShell visibly..."
-WScript.Echo "DEBUG: if there is a PowerShell parse/runtime error, it should appear in the window."
-
 Dim psExitCode
+Dim psCommand
 
-psExitCode = WshShell.Run( _
-    "powershell.exe -NoProfile -ExecutionPolicy Bypass -NoExit -File " & _
-    Chr(34) & psTempFile & Chr(34), _
-    1, _
-    True)
+If DEBUG_MODE Then
 
-WScript.Echo "DEBUG: PowerShell exited with code " & CStr(psExitCode)
-WScript.Echo "DEBUG: debug log (if created): " & _
-             fso.BuildPath(fso.GetSpecialFolder(2), "omniroute-tray-debug.log")
+    WScript.Echo "DEBUG: temporary PowerShell script: " & psTempFile
+    WScript.Echo "DEBUG: launching PowerShell visibly..."
+    WScript.Echo "DEBUG: if there is a PowerShell parse/runtime error, it should appear in the window."
+
+    psCommand = _
+        "powershell.exe -NoProfile -ExecutionPolicy Bypass -NoExit -File " & _
+        Chr(34) & psTempFile & Chr(34)
+
+    psExitCode = WshShell.Run(psCommand, 1, True)
+
+    WScript.Echo "DEBUG: PowerShell exited with code " & CStr(psExitCode)
+    WScript.Echo "DEBUG: debug log: " & _
+                 fso.BuildPath(fso.GetSpecialFolder(2), "omniroute-tray-debug.log")
+
+Else
+
+    psCommand = _
+        "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File " & _
+        Chr(34) & psTempFile & Chr(34)
+
+    ' Production mode: launch asynchronously and silently.
+    WshShell.Run psCommand, 0, False
+    psExitCode = 0
+
+End If
 
 Set WshShell = Nothing
 Set fso = Nothing

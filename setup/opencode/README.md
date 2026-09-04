@@ -97,7 +97,7 @@ opencode plugin add github:Venom120/My-Agents#main
 ### From the OpenCode config
 
 Add this to your OpenCode config (`~/.config/opencode/config.json` or
-`OPENCODE_CONFIG_DIR/opencode.json`):
+`OPENCODE_CONFIG_DIR/opencode.jsonc`):
 
 ```json
 {
@@ -128,7 +128,85 @@ it will not be copied into OpenCode's package cache.
 
 ---
 
-## 3. Verify
+## 3. Profiles (My-Agents ↔ ECC)
+
+OpenCode can run **two profiles** that share the same OmniRoute
+backend:
+
+| Profile | Pipeline | Source |
+|---|---|---|
+| **My-Agents** | 6-stage: Researcher → Designer → Implementer → Optimizer → Tester → Reviewer | GitHub: `Venom120/My-Agents#main` |
+| **ECC** | Orchestrator + 68-agent swarm (286 skills, 94 commands) | npm: `ecc-universal` |
+
+The two profile templates live at the My-Agents repo root:
+
+- [`opencode.my-agents.jsonc`](../../opencode.my-agents.jsonc)
+- [`opencode.ecc.jsonc`](../../opencode.ecc.jsonc)
+
+Both reference the **same six OmniRoute Engine Combos** under
+`provider.omniroute.models`, so the model layer is identical.
+Only the `plugin` block differs.
+
+### Switching profiles
+
+**From the Windows tray (recommended for WSL users):**
+right-click the tray icon → **OpenCode** → **Profile** → click
+**My-Agents** or **ECC**. The tray copies the right template to
+`~/.config/opencode/opencode.jsonc` inside WSL, restarts
+`opencode.service`, and updates the checkmark. For ECC, the tray
+auto-installs and builds `ecc-universal` if needed. See
+[`../README.md`](../README.md) for the full details.
+
+**Manually on Linux/WSL:**
+
+```bash
+# Pick the profile you want
+PROFILE=my-agents   # or: ecc
+
+# Copy the template into your active OpenCode config
+mkdir -p ~/.config/opencode
+cp /mnt/d/Github/My-Agents/opencode.${PROFILE}.jsonc \
+   ~/.config/opencode/opencode.jsonc
+
+# ECC only: install + build the plugin globally
+if [ "$PROFILE" = "ecc" ]; then
+  npm install -g ecc-universal
+  cd "$(npm root -g)/ecc-universal" && npm run build
+fi
+
+# Restart OpenCode
+sudo systemctl restart opencode
+```
+
+**What you should see:** the menu's ✓ moves to the active profile.
+The tray detects this by SHA-256 hash (not string match) of the
+active `opencode.jsonc` against the two known templates, so
+hand-edits are detected and shown as "Unknown active profile".
+
+### User-added plugins survive switches
+
+The tray merges, not overwrites. Any plugin in the live
+`opencode.jsonc` that does **not** match the chosen template's
+base entry is kept and re-appended after the base on the next
+switch. So:
+
+```bash
+# On my-agents profile, install a plugin
+opencode plugin add superpowers
+# Switch to ecc
+# Switch back to my-agents
+# `superpowers` is still in the live opencode.jsonc
+```
+
+The previous live file is backed up to `opencode.jsonc.bak` before
+each switch, so a hand-edit that confuses the merge can be
+recovered with `cp ~/.config/opencode/opencode.jsonc.bak
+~/.config/opencode/opencode.jsonc`. The merge logs each kept
+extra to `%LOCALAPPDATA%\My-Agents\tray.log`.
+
+---
+
+## 4. Verify
 
 After installing:
 
@@ -147,7 +225,7 @@ to make sure the six combos are registered.
 
 ---
 
-## Troubleshooting
+## 5. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
@@ -155,4 +233,5 @@ to make sure the six combos are registered.
 | OpenCode UI loads but agents are empty | The plugin failed to load. Run `opencode plugin list` and look for errors. |
 | `setup/` files appear in OpenCode's cache | They should not — the plugin loader is hard-coded to only walk `agents/`. If you do see them, file a bug. |
 | Tray on Windows says OpenCode is `failed` | Click tray → OpenCode → Start. systemd must be running inside WSL. |
+| Tray shows "Unknown active profile" | The live `opencode.jsonc` does not match either known template. Run "Re-deploy templates" from the Profile submenu or hand-copy the desired template from `opencode.my-agents.json` / `opencode.ecc.json`. |
 | Worker writes `REPORT.md` in the wrong folder | The worker violated the strict file location rules. See `AGENTS.md` rule 12. |
