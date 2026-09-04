@@ -1,29 +1,26 @@
 # /etc/systemd/system/omniroute.service
 [Unit]
 Description=OmniRoute AI Gateway
-Wants=network-online.target
 After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 User=root
-Group=root
+WorkingDirectory=/root
 
-Environment=DATA_DIR=/root/.omniroute
-Environment=HOSTNAME=0.0.0.0
-Environment=PORT=20128
+# Service-specific environment
+Environment=HOME=/root
 
-# OmniRoute automatically attempts to open its dashboard
-# through Windows PowerShell when running under WSL.
-# Prevent this service from accessing Windows filesystem/interop.
-InaccessiblePaths=/mnt/c/Windows/System32/WindowsPowerShell
+# .bashrc is the single source of truth
+Environment=BASH_ENV=/root/.bashrc
 
-ExecStart=/usr/local/bin/omniroute
+# Start through Bash so the service gets the same environment
+# as other services using .bashrc.
+ExecStart=/bin/bash -c 'exec /usr/bin/env omniroute'
 
 Restart=on-failure
 RestartSec=5
-
-TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target

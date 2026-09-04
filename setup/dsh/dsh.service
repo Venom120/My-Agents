@@ -1,3 +1,4 @@
+# /etc/systemd/system/dsh.service
 [Unit]
 Description=DeepSeek Harness Web
 After=network-online.target
@@ -13,18 +14,11 @@ Environment=HOME=/root
 Environment=DSH_HOME=/root/.dsh
 Environment=NODE_OPTIONS=--max-old-space-size=8192
 
-# pyenv
-Environment=PYENV_ROOT=/root/.pyenv
-
-# Linux-only PATH.
-# pyenv shims come first so Python resolves through pyenv.
-Environment="PATH=/root/.pyenv/shims:/root/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
-# Load the bash configuration for non-interactive bash shells.
-# The .bashrc must not recursively initialize pyenv through BASH_ENV.
+# Make .bashrc the source of truth for Bash environments
 Environment=BASH_ENV=/root/.bashrc
 
-ExecStart=/usr/bin/env dsh web --no-open
+# Start through Bash so .bashrc is loaded for the service itself
+ExecStart=/bin/bash -c 'exec /usr/bin/env dsh web --no-open'
 
 Restart=on-failure
 RestartSec=5

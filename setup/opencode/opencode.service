@@ -9,30 +9,23 @@ Type=simple
 User=root
 WorkingDirectory=/root
 
+# Service-specific environment
+Environment=HOME=/root
+
+# Make .bashrc the source of truth for Bash environments
+Environment=BASH_ENV=/root/.bashrc
+
+# Prevent GUI/browser launching
 Environment=DISPLAY=
 Environment=WAYLAND_DISPLAY=
 Environment=BROWSER=
 Environment=OPEN=
-Environment=HOME=/root
 
-# OpenCode environment
-Environment=OPENCODE_ENABLE_EXA=1
-EnvironmentFile=/etc/opencode/opencode.env
+# Start through Bash so .bashrc is loaded for the service itself
+ExecStart=/bin/bash -c 'exec /root/.opencode/bin/opencode web --hostname 0.0.0.0 --port 4096'
 
-# OmniRoute environment
-EnvironmentFile=/etc/omniroute/omniroute.env
-
-# pyenv
-Environment=PYENV_ROOT=/root/.pyenv
-
-# Linux-only PATH.
-# pyenv shims come first so Python resolves through pyenv.
-Environment="PATH=/root/.pyenv/shims:/root/.pyenv/bin:/root/.opencode/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
-# Hide Windows filesystem from this service.
+# Hide Windows filesystem from this service
 InaccessiblePaths=/mnt/c/Windows/System32/WindowsPowerShell
-
-ExecStart=/root/.opencode/bin/opencode web --hostname 0.0.0.0 --port 4096
 
 Restart=on-failure
 RestartSec=5
