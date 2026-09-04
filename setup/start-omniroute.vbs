@@ -247,6 +247,483 @@ ps = ps & "}" & vbCrLf
 ps = ps & "" & vbCrLf
 
 ' ============================================================
+' OPENCODE PROFILE TOGGLE
+'
+' The active OpenCode config is:
+'
+'     $HOME/.config/opencode/opencode.jsonc   (or $XDG_CONFIG_HOME/opencode)
+'
+' We keep two profile templates side by side:
+'
+'     profile.my-agents.json   (always points at the My-Agents 6-stage plugin)
+'     profile.ecc.json         (always points at the ecc-universal npm plugin)
+'
+' Switching is a single file copy + systemctl restart opencode.
+'
+' For the ECC profile we additionally ensure the `ecc-universal`
+' npm package is installed globally inside WSL and that its dist/
+' build is present. Both steps run with full logging and can be
+' aborted by the user.
+'
+' See PLAN-OPENCODE-PROFILE-TOGGLE.md for the full design.
+' ============================================================
+
+ps = ps & "$trayLogDir = Join-Path $env:LOCALAPPDATA 'My-Agents'" & vbCrLf
+ps = ps & "if (-not (Test-Path $trayLogDir)) { [void](New-Item -ItemType Directory -Path $trayLogDir) }" & vbCrLf
+ps = ps & "$trayLogPath = Join-Path $trayLogDir 'tray.log'" & vbCrLf
+ps = ps & "" & vbCrLf
+
+ps = ps & "function Write-TrayLog {" & vbCrLf
+ps = ps & "    param([string]$Message)" & vbCrLf
+ps = ps & "    $line = '[' + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + '] ' + $Message" & vbCrLf
+ps = ps & "    try { Add-Content -Path $trayLogPath -Value $line -ErrorAction SilentlyContinue } catch {}" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+ps = ps & "function Rotate-TrayLog {" & vbCrLf
+ps = ps & "    if (-not (Test-Path $trayLogPath)) { return }" & vbCrLf
+ps = ps & "    $size = (Get-Item $trayLogPath -ErrorAction SilentlyContinue).Length" & vbCrLf
+ps = ps & "    if ($null -eq $size) { return }" & vbCrLf
+ps = ps & "    if ($size -lt 5MB) { return }" & vbCrLf
+ps = ps & "    try {" & vbCrLf
+ps = ps & "        $tail = Get-Content $trayLogPath -Tail 2000 -ErrorAction SilentlyContinue" & vbCrLf
+ps = ps & "        if ($null -ne $tail -and $tail.Count -gt 0) {" & vbCrLf
+ps = ps & "            Set-Content -Path $trayLogPath -Value $tail -ErrorAction SilentlyContinue" & vbCrLf
+ps = ps & "        }" & vbCrLf
+ps = ps & "    } catch {}" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+ps = ps & "function Show-TrayError {" & vbCrLf
+ps = ps & "    param([string]$Title, [string]$Message)" & vbCrLf
+ps = ps & "    Write-TrayLog ('ERROR: ' + $Title + ' - ' + $Message)" & vbCrLf
+ps = ps & "    $answer = [System.Windows.Forms.MessageBox]::Show(" & vbCrLf
+ps = ps & "        $Message + [Environment]::NewLine + [Environment]::NewLine + 'Open the tray log?'," & vbCrLf
+ps = ps & "        'AI Services - ' + $Title," & vbCrLf
+ps = ps & "        'YesNo'," & vbCrLf
+ps = ps & "        'Warning')" & vbCrLf
+ps = ps & "    if ($answer -eq 'Yes') { Start-Process notepad.exe $trayLogPath }" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+ps = ps & "function Get-WslConfigRoot {" & vbCrLf
+ps = ps & "    $root = & wsl.exe -d $WSLDistro -- bash -lc '" & vbCrLf
+ps = ps & "        if [ -n "$OPENCODE_CONFIG_DIR"" ]; then echo "$OPENCODE_CONFIG_DIR"";" & vbCrLf
+ps = ps & "        elif [ -n "$XDG_CONFIG_HOME"" ]; then echo "$XDG_CONFIG_HOME/opencode"";" & vbCrLf
+ps = ps & "        else echo "$HOME/.config/opencode"";" & vbCrLf
+ps = ps & "        fi" & vbCrLf
+ps = ps & "    '" & vbCrLf
+ps = ps & "    if ($null -eq $root) { return $null }" & vbCrLf
+ps = ps & "    return ($root | Out-String).Trim()" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+ps = ps & "function Invoke-WslBash {" & vbCrLf
+ps = ps & "    param([string]$Command)" & vbCrLf
+ps = ps & "    $output = & wsl.exe -d $WSLDistro -- bash -lc $Command 2>&1" & vbCrLf
+ps = ps & "    return ($output | Out-String).Trim()" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+ps = ps & "function Get-WslFileHash {" & vbCrLf
+ps = ps & "    param([string]$WslPath)" & vbCrLf
+ps = ps & "    $b64 = & wsl.exe -d $WSLDistro -- bash -lc ('base64 -w0 `' + $WslPath + `' 2>/dev/null') 2>$null" & vbCrLf
+ps = ps & "    if ($null -eq $b64) { return $null }" & vbCrLf
+ps = ps & "    $b64 = ($b64 | Out-String).Trim()" & vbCrLf
+ps = ps & "    if ($b64.Length -eq 0) { return $null }" & vbCrLf
+ps = ps & "    try {" & vbCrLf
+ps = ps & "        $raw = [Convert]::FromBase64String($b64)" & vbCrLf
+ps = ps & "        $sha = [System.Security.Cryptography.SHA256]::Create()" & vbCrLf
+ps = ps & "        $h = $sha.ComputeHash($raw)" & vbCrLf
+ps = ps & "        return ([BitConverter]::ToString($h) -replace '-','').ToLowerInvariant()" & vbCrLf
+ps = ps & "    } catch { return $null }" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+' --- Fallback template for my-agents (used when repo files are absent)." & vbCrLf
+ps = ps & "$profileMyAgentsFallback = @'" & vbCrLf
+ps = ps & "{" & vbCrLf
+ps = ps & "  "$schema"": ""https://opencode.ai/config.json""," & vbCrLf
+ps = ps & "  ""plugin"": [[" & vbCrLf
+ps = ps & "    ""my-agents@git+https://github.com/Venom120/My-Agents.git#main""," & vbCrLf
+ps = ps & "    {" & vbCrLf
+ps = ps & "      ""externalSkills"": []" & vbCrLf
+ps = ps & "    }]" & vbCrLf
+ps = ps & "  ]," & vbCrLf
+ps = ps & "  ""provider"": {" & vbCrLf
+ps = ps & "    ""omniroute"": {" & vbCrLf
+ps = ps & "      ""name"": ""OmniRoute""," & vbCrLf
+ps = ps & "      ""npm"": ""@ai-sdk/openai-compatible""," & vbCrLf
+ps = ps & "      ""options"": {" & vbCrLf
+ps = ps & "        ""baseURL"": ""http://127.0.0.1:20128/v1""," & vbCrLf
+ps = ps & "        ""apiKey"": ""{env:OMNIROUTE_API_KEY}""" & vbCrLf
+ps = ps & "      }," & vbCrLf
+ps = ps & "      ""models"": {" & vbCrLf
+ps = ps & "        ""free-reasoning"":        { ""name"": ""OmniRoute - Reasoning"" }," & vbCrLf
+ps = ps & "        ""free-coding-deep"":      { ""name"": ""OmniRoute - Deep Coding"" }," & vbCrLf
+ps = ps & "        ""free-coding-standard"":  { ""name"": ""OmniRoute - Standard Coding"" }," & vbCrLf
+ps = ps & "        ""free-coding-fast"":      { ""name"": ""OmniRoute - Fast Coding"" }," & vbCrLf
+ps = ps & "        ""free-context"":          { ""name"": ""OmniRoute - Large Context"" }," & vbCrLf
+ps = ps & "        ""free-vision"":           { ""name"": ""OmniRoute - Vision"" }" & vbCrLf
+ps = ps & "      }" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "  }" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "'@" & vbCrLf
+ps = ps & "" & vbCrLf
+
+' --- Fallback template for ecc (used when repo files are absent)." & vbCrLf
+ps = ps & "$profileEccFallback = @'" & vbCrLf
+ps = ps & "{" & vbCrLf
+ps = ps & "  "$schema"": ""https://opencode.ai/config.json""," & vbCrLf
+ps = ps & "  ""plugin"": [""ecc-universal""]," & vbCrLf
+ps = ps & "  ""provider"": {" & vbCrLf
+ps = ps & "    ""omniroute"": {" & vbCrLf
+ps = ps & "      ""name"": ""OmniRoute""," & vbCrLf
+ps = ps & "      ""npm"": ""@ai-sdk/openai-compatible""," & vbCrLf
+ps = ps & "      ""options"": {" & vbCrLf
+ps = ps & "        ""baseURL"": ""http://127.0.0.1:20128/v1""," & vbCrLf
+ps = ps & "        ""apiKey"": ""{env:OMNIROUTE_API_KEY}""" & vbCrLf
+ps = ps & "      }," & vbCrLf
+ps = ps & "      ""models"": {" & vbCrLf
+ps = ps & "        ""free-reasoning"":        { ""name"": ""OmniRoute - Reasoning"" }," & vbCrLf
+ps = ps & "        ""free-coding-deep"":      { ""name"": ""OmniRoute - Deep Coding"" }," & vbCrLf
+ps = ps & "        ""free-coding-standard"":  { ""name"": ""OmniRoute - Standard Coding"" }," & vbCrLf
+ps = ps & "        ""free-coding-fast"":      { ""name"": ""OmniRoute - Fast Coding"" }," & vbCrLf
+ps = ps & "        ""free-context"":          { ""name"": ""OmniRoute - Large Context"" }," & vbCrLf
+ps = ps & "        ""free-vision"":           { ""name"": ""OmniRoute - Vision"" }" & vbCrLf
+ps = ps & "      }" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "  }" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "'@" & vbCrLf
+ps = ps & "" & vbCrLf
+
+' --- Well-known path to the repo on this machine." & vbCrLf
+ps = ps & "$repoRoot = '/mnt/d/Github/My-Agents'" & vbCrLf
+ps = ps & "$repoMyAgentsTemplate = $repoRoot + '/opencode.my-agents.jsonc'" & vbCrLf
+ps = ps & "$repoEccTemplate = $repoRoot + '/opencode.ecc.jsonc'" & vbCrLf
+ps = ps & "" & vbCrLf
+
+ps = ps & "function Get-ProfileTemplateBody {" & vbCrLf
+ps = ps & "    param([string]$ProfileName)" & vbCrLf
+ps = ps & "    $repoFile = if ($ProfileName -eq 'my-agents') { $repoMyAgentsTemplate } else { $repoEccTemplate }" & vbCrLf
+ps = ps & "    $fallback = if ($ProfileName -eq 'my-agents') { $profileMyAgentsFallback } else { $profileEccFallback }" & vbCrLf
+ps = ps & "    $exists = & wsl.exe -d $WSLDistro -- test -f $repoFile 2>$null" & vbCrLf
+ps = ps & "    if ($LASTEXITCODE -eq 0) {" & vbCrLf
+ps = ps & "        $body = & wsl.exe -d $WSLDistro -- cat $repoFile 2>$null" & vbCrLf
+ps = ps & "        if ($null -ne $body -and $body.Length -gt 0) {" & vbCrLf
+ps = ps & "            Write-TrayLog ('deployed ' + $ProfileName + ' from repo (' + $repoFile + ')')" & vbCrLf
+ps = ps & "            return ($body | Out-String)" & vbCrLf
+ps = ps & "        }" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    Write-TrayLog ('deployed ' + $ProfileName + ' from embedded fallback (repo file missing or unreadable)')" & vbCrLf
+ps = ps & "    return $fallback" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+ps = ps & "function Deploy-ProfileTemplates {" & vbCrLf
+ps = ps & "    $root = Get-WslConfigRoot" & vbCrLf
+ps = ps & "    if ([string]::IsNullOrEmpty($root)) {" & vbCrLf
+ps = ps & "        Show-TrayError 'Config root' 'Could not resolve the OpenCode config root inside WSL.'" & vbCrLf
+ps = ps & "        return $null" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    Write-TrayLog ('deploying profile templates to ' + $root)" & vbCrLf
+ps = ps & "    foreach ($p in @('my-agents','ecc')) {" & vbCrLf
+ps = ps & "        $dest = $root + '/profile.' + $p + '.json'" & vbCrLf
+ps = ps & "        $body = Get-ProfileTemplateBody $p" & vbCrLf
+ps = ps & "        if ($null -eq $body -or $body.Length -lt 5) {" & vbCrLf
+ps = ps & "            Show-TrayError 'Templates missing' ('The ' + $p + ' profile template is empty. Re-install the latest start-omniroute.vbs.')" & vbCrLf
+ps = ps & "            return $null" & vbCrLf
+ps = ps & "        }" & vbCrLf
+ps = ps & "        $tmp = [IO.Path]::GetTempFileName()" & vbCrLf
+ps = ps & "        Set-Content -Path $tmp -Value $body -Encoding UTF8 -ErrorAction Stop" & vbCrLf
+ps = ps & "        $b64Data = [Convert]::ToBase64String([IO.File]::ReadAllBytes($tmp))" & vbCrLf
+ps = ps & "        Remove-Item $tmp -ErrorAction SilentlyContinue" & vbCrLf
+ps = ps & "        $b64Escaped = $b64Data -replace [Regex]::Escape('`r')+ '|'+ [Regex]::Escape('`n'), ''" & vbCrLf
+ps = ps & "        $writeCmd = 'echo ' + $b64Escaped + ' | base64 -d > ""' + $dest + '""'" & vbCrLf
+ps = ps & "        $null = & wsl.exe -d $WSLDistro -- bash -lc $writeCmd 2>&1" & vbCrLf
+ps = ps & "        if ($LASTEXITCODE -ne 0) {" & vbCrLf
+ps = ps & "            Show-TrayError 'Template write failed' ('Failed to write ' + $dest + ' inside WSL.')" & vbCrLf
+ps = ps & "            return $null" & vbCrLf
+ps = ps & "        }" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    return $root" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+ps = ps & "function Test-WslDistroReady {" & vbCrLf
+ps = ps & "    $null = & wsl.exe -d $WSLDistro -- true 2>$null" & vbCrLf
+ps = ps & "    if ($LASTEXITCODE -ne 0) {" & vbCrLf
+ps = ps & "        Write-TrayLog ('WSL distro ' + $WSLDistro + ' not ready')" & vbCrLf
+ps = ps & "        return $false" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    return $true" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+ps = ps & "function Test-EccInstallReady {" & vbCrLf
+ps = ps & "    $lsOut = Invoke-WslBash 'npm ls -g ecc-universal --depth=0 2>&1'" & vbCrLf
+ps = ps & "    if ($LASTEXITCODE -ne 0) { return $false }" & vbCrLf
+ps = ps & "    $globalRoot = Invoke-WslBash 'npm root -g'" & vbCrLf
+ps = ps & "    if ([string]::IsNullOrEmpty($globalRoot)) { return $false }" & vbCrLf
+ps = ps & "    $distFile = $globalRoot + '/ecc-universal/dist/index.js'" & vbCrLf
+ps = ps & "    $null = Invoke-WslBash ('test -f ""' + $distFile + '""')" & vbCrLf
+ps = ps & "    return ($LASTEXITCODE -eq 0)" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+ps = ps & "function Install-EccPackage {" & vbCrLf
+ps = ps & "    Write-TrayLog 'installing ecc-universal globally'" & vbCrLf
+ps = ps & "    $out = Invoke-WslBash 'npm install -g ecc-universal 2>&1'" & vbCrLf
+ps = ps & "    if ($LASTEXITCODE -ne 0) {" & vbCrLf
+ps = ps & "        Write-TrayLog ('npm install -g ecc-universal FAILED: ' + $out)" & vbCrLf
+ps = ps & "        Show-TrayError 'npm install failed' ('Failed to install ecc-universal inside WSL.' + [Environment]::NewLine + $out)" & vbCrLf
+ps = ps & "        return $false" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    Write-TrayLog 'ecc-universal installed'" & vbCrLf
+ps = ps & "    return $true" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+ps = ps & "function Build-EccPlugin {" & vbCrLf
+ps = ps & "    Write-TrayLog 'building ecc-universal dist'" & vbCrLf
+ps = ps & "    $globalRoot = Invoke-WslBash 'npm root -g'" & vbCrLf
+ps = ps & "    $eccDir = '""' + $globalRoot + '/ecc-universal""'" & vbCrLf
+ps = ps & "    $out = Invoke-WslBash ('cd ' + $eccDir + ' && npm run build 2>&1')" & vbCrLf
+ps = ps & "    if ($LASTEXITCODE -ne 0) {" & vbCrLf
+ps = ps & "        Write-TrayLog ('npm run build for ecc-universal FAILED: ' + $out)" & vbCrLf
+ps = ps & "        Show-TrayError 'Build failed' ('ecc-universal build failed inside WSL.' + [Environment]::NewLine + $out)" & vbCrLf
+ps = ps & "        return $false" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    Write-TrayLog 'ecc-universal build complete'" & vbCrLf
+ps = ps & "    return $true" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+ps = ps & "function Wait-OpenCodeActive {" & vbCrLf
+ps = ps & "    param([int]$TimeoutSeconds = 30)" & vbCrLf
+ps = ps & "    for ($i = 0; $i -lt ($TimeoutSeconds * 2); $i++) {" & vbCrLf
+ps = ps & "        $state = Get-WslServiceState 'opencode'" & vbCrLf
+ps = ps & "        if ($state -eq 'active') { return $true }" & vbCrLf
+ps = ps & "        if ($state -eq 'failed') { return $false }" & vbCrLf
+ps = ps & "        Start-Sleep -Milliseconds 500" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    return $false" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+
+ps = ps & "function Read-JsonFile {" & vbCrLf
+ps = ps & "    param([string]$Path)" & vbCrLf
+ps = ps & "    if (-not (Test-Path $Path)) { return $null }" & vbCrLf
+ps = ps & "    try {" & vbCrLf
+ps = ps & "        $raw = Get-Content -Raw -Path $Path -Encoding UTF8" & vbCrLf
+ps = ps & "        if ([string]::IsNullOrWhiteSpace($raw)) { return $null }" & vbCrLf
+ps = ps & "        $obj = $raw | ConvertFrom-Json" & vbCrLf
+ps = ps & "        return $obj" & vbCrLf
+ps = ps & "    } catch {" & vbCrLf
+ps = ps & "        Write-TrayLog ('read-Json failed for ' + $Path + ': ' + $_.Exception.Message)" & vbCrLf
+ps = ps & "        return $null" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "function PluginEntryToComparableString {" & vbCrLf
+ps = ps & "    param($Entry)" & vbCrLf
+ps = ps & "    if ($null -eq $Entry) { return '' }" & vbCrLf
+ps = ps & "    if ($Entry -is [string]) { return 'S|' + $Entry }" & vbCrLf
+ps = ps & "    if ($Entry -is [array]) {" & vbCrLf
+ps = ps & "        $parts = @()" & vbCrLf
+ps = ps & "        foreach ($e in $Entry) { $parts += (PluginEntryToComparableString $e) }" & vbCrLf
+ps = ps & "        return 'A|' + ($parts -join '||')" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    if ($Entry -is [PSCustomObject]) {" & vbCrLf
+ps = ps & "        $keys = @($Entry.PSObject.Properties | ForEach-Object { $_.Name } | Sort-Object)" & vbCrLf
+ps = ps & "        $parts = @()" & vbCrLf
+ps = ps & "        foreach ($k in $keys) {" & vbCrLf
+ps = ps & "            $v = $Entry.$k" & vbCrLf
+ps = ps & "            $parts += ($k + '=' + (PluginEntryToComparableString $v))" & vbCrLf
+ps = ps & "        }" & vbCrLf
+ps = ps & "        return 'O|' + ($parts -join ';')" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    return 'V|' + [string]$Entry" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "function Split-PluginBlock {" & vbCrLf
+ps = ps & "    param($Live, $TemplateBase)" & vbCrLf
+ps = ps & "    $liveList = if ($null -eq $Live) { @() } elseif ($Live -is [array]) { $Live } else { @($Live) }" & vbCrLf
+ps = ps & "    $tmplList = if ($null -eq $TemplateBase) { @() } elseif ($TemplateBase -is [array]) { $TemplateBase } else { @($TemplateBase) }" & vbCrLf
+ps = ps & "    $tmplKeys = @()" & vbCrLf
+ps = ps & "    foreach ($t in $tmplList) { $tmplKeys += (PluginEntryToComparableString $t) }" & vbCrLf
+ps = ps & "    $matched = @()" & vbCrLf
+ps = ps & "    $extras  = @()" & vbCrLf
+ps = ps & "    foreach ($e in $liveList) {" & vbCrLf
+ps = ps & "        $k = PluginEntryToComparableString $e" & vbCrLf
+ps = ps & "        if ($tmplKeys -contains $k) {" & vbCrLf
+ps = ps & "            $matched += $e" & vbCrLf
+ps = ps & "        } else {" & vbCrLf
+ps = ps & "            $extras += $e" & vbCrLf
+ps = ps & "        }" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    return ,@($matched, $extras)" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "function PluginBlockEqual {" & vbCrLf
+ps = ps & "    param($A, $B)" & vbCrLf
+ps = ps & "    $aList = if ($null -eq $A) { @() } elseif ($A -is [array]) { $A } else { @($A) }" & vbCrLf
+ps = ps & "    $bList = if ($null -eq $B) { @() } elseif ($B -is [array]) { $B } else { @($B) }" & vbCrLf
+ps = ps & "    if ($aList.Count -ne $bList.Count) { return $false }" & vbCrLf
+ps = ps & "    $bKeys = @()" & vbCrLf
+ps = ps & "    foreach ($x in $bList) { $bKeys += (PluginEntryToComparableString $x) }" & vbCrLf
+ps = ps & "    foreach ($x in $aList) {" & vbCrLf
+ps = ps & "        if (-not ($bKeys -contains (PluginEntryToComparableString $x))) { return $false }" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    return $true" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "function Merge-ProviderBlock {" & vbCrLf
+ps = ps & "    param($TemplateProviders, $LiveProviders)" & vbCrLf
+ps = ps & "    $merged = [ordered]@{}" & vbCrLf
+ps = ps & "    if ($null -ne $TemplateProviders) {" & vbCrLf
+ps = ps & "        foreach ($p in $TemplateProviders.PSObject.Properties) { $merged[$p.Name] = $p.Value }" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    if ($null -ne $LiveProviders) {" & vbCrLf
+ps = ps & "        foreach ($p in $LiveProviders.PSObject.Properties) {" & vbCrLf
+ps = ps & "            if (-not $merged.Contains($p.Name)) { $merged[$p.Name] = $p.Value }" & vbCrLf
+ps = ps & "        }" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    return $merged" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "function Write-MergedConfig {" & vbCrLf
+ps = ps & "    param([string]$Path, [hashtable]$Config)" & vbCrLf
+ps = ps & "    $ordered = [ordered]@{}" & vbCrLf
+ps = ps & "    foreach ($k in $Config.Keys) { $ordered[$k] = $Config[$k] }" & vbCrLf
+ps = ps & "    $json = $ordered | ConvertTo-Json -Depth 20" & vbCrLf
+ps = ps & "    $tmp = [IO.Path]::GetTempFileName()" & vbCrLf
+ps = ps & "    try {" & vbCrLf
+ps = ps & "        [IO.File]::WriteAllText($tmp, $json, [Text.UTF8Encoding]::new($false))" & vbCrLf
+ps = ps & "        Move-Item -Force $tmp $Path" & vbCrLf
+ps = ps & "        return $true" & vbCrLf
+ps = ps & "    } catch {" & vbCrLf
+ps = ps & "        Write-TrayLog ('write-merged failed for ' + $Path + ': ' + $_.Exception.Message)" & vbCrLf
+ps = ps & "        if (Test-Path $tmp) { Remove-Item $tmp -Force }" & vbCrLf
+ps = ps & "        return $false" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "function Switch-OpenCodeProfile {" & vbCrLf
+ps = ps & "    param([string]$ProfileName)" & vbCrLf
+ps = ps & "    if ($ProfileName -ne 'my-agents' -and $ProfileName -ne 'ecc') {" & vbCrLf
+ps = ps & "        Show-TrayError 'Invalid profile' ('Unknown profile: ' + $ProfileName)" & vbCrLf
+ps = ps & "        return" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    if (-not (Test-WslDistroReady)) {" & vbCrLf
+ps = ps & "        Show-TrayError 'WSL not ready' ('WSL distro ' + $WSLDistro + ' is not running. Start it first.')" & vbCrLf
+ps = ps & "        return" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    $currentState = Get-WslServiceState 'opencode'" & vbCrLf
+ps = ps & "    if ($currentState -eq 'activating' -or $currentState -eq 'deactivating') {" & vbCrLf
+ps = ps & "        Write-TrayLog ('switch ignored: opencode.service is ' + $currentState)" & vbCrLf
+ps = ps & "        return" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    $root = Deploy-ProfileTemplates" & vbCrLf
+ps = ps & "    if ($null -eq $root) { return }" & vbCrLf
+ps = ps & "    $livePath   = $root + '/opencode.jsonc'" & vbCrLf
+ps = ps & "    $tmplPath   = $root + '/profile.' + $ProfileName + '.json'" & vbCrLf
+ps = ps & "    $backupPath = $root + '/opencode.jsonc.bak'" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "    $live = Read-JsonFile $livePath" & vbCrLf
+ps = ps & "    $tmpl = Read-JsonFile $tmplPath" & vbCrLf
+ps = ps & "    if ($null -eq $tmpl) {" & vbCrLf
+ps = ps & "        Show-TrayError 'Template unreadable' ('Could not read ' + $tmplPath + '. Re-deploy templates from the Profile submenu.')" & vbCrLf
+ps = ps & "        return" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "    $livePlugin  = if ($null -ne $live) { $live.plugin }  else { $null }" & vbCrLf
+ps = ps & "    $tmplPlugin  = $tmpl.plugin" & vbCrLf
+ps = ps & "    $split = Split-PluginBlock $livePlugin $tmplPlugin" & vbCrLf
+ps = ps & "    $matched = $split[0]" & vbCrLf
+ps = ps & "    $extras  = $split[1]" & vbCrLf
+ps = ps & "    $extrasCount = $extras.Count" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "    if ($extrasCount -eq 0 -and (PluginBlockEqual $matched $tmplPlugin)) {" & vbCrLf
+ps = ps & "        Write-TrayLog ('profile ' + $ProfileName + ' already active, no action')" & vbCrLf
+ps = ps & "        return" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "    if ($ProfileName -eq 'ecc') {" & vbCrLf
+ps = ps & "        Write-TrayLog 'checking ecc-universal install inside WSL'" & vbCrLf
+ps = ps & "        if (-not (Test-EccInstallReady)) {" & vbCrLf
+ps = ps & "            if (-not (Install-EccPackage)) { return }" & vbCrLf
+ps = ps & "            if (-not (Test-EccInstallReady)) {" & vbCrLf
+ps = ps & "                if (-not (Build-EccPlugin)) { return }" & vbCrLf
+ps = ps & "            }" & vbCrLf
+ps = ps & "        }" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "    Write-TrayLog ('activating ' + $ProfileName + ' (keeping ' + $extrasCount + ' user plugin(s))')" & vbCrLf
+ps = ps & "    $mergedConfig = [ordered]@{}" & vbCrLf
+ps = ps & "    if ($null -ne $live) {" & vbCrLf
+ps = ps & "        foreach ($p in $live.PSObject.Properties) { $mergedConfig[$p.Name] = $p.Value }" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    foreach ($p in $tmpl.PSObject.Properties) { $mergedConfig[$p.Name] = $p.Value }" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "    $mergedPlugin = @() + @($tmplPlugin)" & vbCrLf
+ps = ps & "    foreach ($e in $extras) { $mergedPlugin += $e }" & vbCrLf
+ps = ps & "    $mergedConfig['plugin'] = $mergedPlugin" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "    $liveProviders   = if ($null -ne $live)  { $live.provider }   else { $null }" & vbCrLf
+ps = ps & "    $tmplProviders   = $tmpl.provider" & vbCrLf
+ps = ps & "    $mergedProviders = Merge-ProviderBlock $tmplProviders $liveProviders" & vbCrLf
+ps = ps & "    $mergedConfig['provider'] = $mergedProviders" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "    if (Test-Path $livePath) {" & vbCrLf
+ps = ps & "        try { Copy-Item -Force $livePath $backupPath } catch { Write-TrayLog ('backup warn: ' + $_.Exception.Message) }" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "    if (-not (Write-MergedConfig $livePath $mergedConfig)) {" & vbCrLf
+ps = ps & "        Show-TrayError 'Write failed' ('Could not write ' + $livePath + '. Check WSL disk and tray.log.')" & vbCrLf
+ps = ps & "        return" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "" & vbCrLf
+ps = ps & "    if ($extrasCount -gt 0) {" & vbCrLf
+ps = ps & "        $names = @()" & vbCrLf
+ps = ps & "        foreach ($e in $extras) {" & vbCrLf
+ps = ps & "            if ($e -is [string]) { $names += $e }" & vbCrLf
+ps = ps & "            elseif ($e -is [array] -and $e.Count -gt 0) { $names += [string]$e[0] }" & vbCrLf
+ps = ps & "            elseif ($e -is [PSCustomObject] -and $e.PSObject.Properties.Name -contains 'name') { $names += [string]$e.name }" & vbCrLf
+ps = ps & "            else { $names += '<entry>' }" & vbCrLf
+ps = ps & "        }" & vbCrLf
+ps = ps & "        Write-TrayLog ('merge: kept ' + $extrasCount + ' user plugin(s): ' + ($names -join ', '))" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "    Write-TrayLog ('cp profile.' + $ProfileName + '.json + extras -> opencode.jsonc')" & vbCrLf
+ps = ps & "    Write-TrayLog 'systemctl restart opencode'" & vbCrLf
+ps = ps & "    Invoke-WslSystemctl @('restart','opencode')" & vbCrLf
+ps = ps & "    $ok = Wait-OpenCodeActive -TimeoutSeconds 30" & vbCrLf
+ps = ps & "    if ($ok) {" & vbCrLf
+ps = ps & "        Write-TrayLog 'opencode.service -> active'" & vbCrLf
+ps = ps & "        Write-TrayLog 'profile switch complete'" & vbCrLf
+ps = ps & "    } else {" & vbCrLf
+ps = ps & "        $state = Get-WslServiceState 'opencode'" & vbCrLf
+ps = ps & "        if ($state -eq 'failed') {" & vbCrLf
+ps = ps & "            Write-TrayLog 'opencode.service -> failed'" & vbCrLf
+ps = ps & "            Show-TrayError 'OpenCode failed' 'opencode.service did not start. Check OMNIROUTE_API_KEY and `journalctl -u opencode` inside WSL.'" & vbCrLf
+ps = ps & "        } else {" & vbCrLf
+ps = ps & "            Write-TrayLog 'opencode.service restart timed out after 30s'" & vbCrLf
+ps = ps & "            Show-TrayError 'Timeout' 'opencode.service did not become active within 30 seconds. Check `journalctl -u opencode` inside WSL.'" & vbCrLf
+ps = ps & "        }" & vbCrLf
+ps = ps & "    }" & vbCrLf
+ps = ps & "}" & vbCrLf
+ps = ps & "" & vbCrLf
+
+
+' Rotate any oversized log from a previous run on startup." & vbCrLf
+ps = ps & "Rotate-TrayLog" & vbCrLf
+ps = ps & "Write-TrayLog ('[my-agents] tray launched')" & vbCrLf
+ps = ps & "" & vbCrLf
+
+' ============================================================
 ' TRAY ICON
 ' ============================================================
 
@@ -432,6 +909,40 @@ ps = ps & "[void]$openCodeMenu.DropDownItems.Add($openCodeOpen)" & vbCrLf
 ps = ps & "[void]$openCodeMenu.DropDownItems.Add($openCodeStart)" & vbCrLf
 ps = ps & "[void]$openCodeMenu.DropDownItems.Add($openCodeRestart)" & vbCrLf
 ps = ps & "[void]$openCodeMenu.DropDownItems.Add($openCodeStop)" & vbCrLf
+
+' OpenCode -> Profile (submenu for switching agent profiles)
+
+ps = ps & "$openCodeProfileMenu = New-Object System.Windows.Forms.ToolStripMenuItem" & vbCrLf
+ps = ps & "$openCodeProfileMenu.Text = 'Profile'" & vbCrLf
+
+ps = ps & "$openCodeProfileMyAgents = New-Object System.Windows.Forms.ToolStripMenuItem" & vbCrLf
+ps = ps & "$openCodeProfileMyAgents.Text = 'My-Agents'" & vbCrLf
+ps = ps & "$openCodeProfileMyAgents.Add_Click({" & vbCrLf
+ps = ps & "    Switch-OpenCodeProfile 'my-agents'" & vbCrLf
+ps = ps & "})" & vbCrLf
+
+ps = ps & "$openCodeProfileEcc = New-Object System.Windows.Forms.ToolStripMenuItem" & vbCrLf
+ps = ps & "$openCodeProfileEcc.Text = 'ECC'" & vbCrLf
+ps = ps & "$openCodeProfileEcc.Add_Click({" & vbCrLf
+ps = ps & "    Switch-OpenCodeProfile 'ecc'" & vbCrLf
+ps = ps & "})" & vbCrLf
+
+ps = ps & "$openCodeProfileRedeploy = New-Object System.Windows.Forms.ToolStripMenuItem" & vbCrLf
+ps = ps & "$openCodeProfileRedeploy.Text = 'Re-deploy templates'" & vbCrLf
+ps = ps & "$openCodeProfileRedeploy.Add_Click({" & vbCrLf
+ps = ps & "    `$null = Deploy-ProfileTemplates" & vbCrLf
+ps = ps & "})" & vbCrLf
+
+ps = ps & "[void]$openCodeProfileMenu.DropDownItems.Add($openCodeProfileMyAgents)" & vbCrLf
+ps = ps & "[void]$openCodeProfileMenu.DropDownItems.Add($openCodeProfileEcc)" & vbCrLf
+ps = ps & "$openCodeProfileRedeploySep = New-Object System.Windows.Forms.ToolStripSeparator" & vbCrLf
+ps = ps & "[void]$openCodeProfileMenu.DropDownItems.Add($openCodeProfileRedeploySep)" & vbCrLf
+ps = ps & "[void]$openCodeProfileMenu.DropDownItems.Add($openCodeProfileRedeploy)" & vbCrLf
+
+ps = ps & "$openCodeProfileSep = New-Object System.Windows.Forms.ToolStripSeparator" & vbCrLf
+ps = ps & "[void]$openCodeMenu.DropDownItems.Add($openCodeProfileSep)" & vbCrLf
+ps = ps & "[void]$openCodeMenu.DropDownItems.Add($openCodeProfileMenu)" & vbCrLf
+
 ps = ps & "[void]$openCodeMenu.DropDownItems.Add($openCodeStartup)" & vbCrLf
 ps = ps & "" & vbCrLf
 

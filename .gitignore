@@ -1,3 +1,7 @@
 setup/omniroute/*.csv
 setup/omniroute/*.json
 .agents
+
+# Windows tray log (lives under %LOCALAPPDATA%\My-Agents, never in the repo,
+# but list anyway in case anyone symlinks or copies the repo there).
+tray.log
